@@ -5,12 +5,12 @@ edition = "2024"
 
 [dependencies]
 # Asynchronous runtime for Rust
-tokio = "1.49.0"
+tokio = { version = "1.49.0", features = ["full"] }
 # Main web framework for building APIs
 axum = "0.8"
 # Tower middleware and HTTP utilities for axum
-tower = "0.5.3"
-tower-http = "0.6.8"
+tower = { version = "0.5", features = ["timeout", "buffer", "limit"] }
+tower-http = { version = "0.6", features = ["trace", "cors", "fs"] }
 # JWT Sign and verify
 jsonwebtoken = "10.3.0"
 # JSON serialize and deserialize
@@ -19,7 +19,9 @@ serde_json = "1.0.149"
 # Utilitiy to generate uuid
 uuid = "1.20.0"
 # ORM Database
-diesel = "2.3"
+diesel = { version = "2.3", features = ["r2d2", "sqlite"] }
+r2d2 = "0.8"
+anyhow = "1.0"
 # Fetcher like fetch or axios
 reqwest = { version = "0.13.1", features =["json"] }
 # API Documentation

@@ -1,5 +1,3 @@
-// Declare submodule file path
-pub mod app_state;
+pub mod environment;
 
-// Declare Re-export
-pub use app_state::*;
+pub use environment::*;

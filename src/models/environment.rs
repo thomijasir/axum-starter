@@ -46,5 +46,5 @@ pub struct Environment {
 pub struct AppState {
     pub env: Environment,
     pub cache: utils::Cache,
-    pub db: DBSqlite,
+    pub db: DBSqlite, // Change with DBPostgres if you want use postgres
 }

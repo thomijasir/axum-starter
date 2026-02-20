@@ -5,6 +5,6 @@ pub mod models;
 // pub mod modules;
 // pub mod schemas;
 pub mod config;
-pub mod server;
+// pub mod server;
 pub mod services;
 pub mod utils;

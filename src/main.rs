@@ -9,6 +9,6 @@ async fn main() {
     // Create DB
     let db = DBSqlite::new(&env.database_url).expect("Failed to create database pool");
     // Create App State
-    let app_state = AppState { env, cache, db };
-    println!("RUN");
+    println!("RUN {:?}", env);
+    let _app_state = AppState { env, cache, db };
 }

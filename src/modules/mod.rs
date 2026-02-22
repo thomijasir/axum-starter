@@ -1,25 +1,25 @@
-pub mod user;
-use crate::AppState;
-use crate::docs::api_doc::ApiDoc;
 use axum::Router;
+use axum::http::StatusCode;
+use axum::response::{IntoResponse, Response};
 use axum::routing::get;
 use std::sync::Arc;
-use utoipa::OpenApi;
-use utoipa_swagger_ui::SwaggerUi;
-// Define AppRoute
-pub struct AppRoute;
-impl AppRoute {
-    pub fn register() -> Router<Arc<AppState>> {
-        // Route Index
-        let route_index = Router::new().nest("/users", user::Routes::index());
-        // Docs Route
-        let openapi = ApiDoc::openapi();
-        Router::new()
-            .nest("/api/v1", route_index)
-            .route("/", get(Self::ping))
-            .merge(SwaggerUi::new("/docs").url("/api/openapi.json", openapi))
-    }
-    async fn ping() -> &'static str {
-        "hello world"
-    }
+
+use crate::models::AppState;
+
+pub struct AppRoutes;
+
+impl AppRoutes {
+  pub fn build() -> Router<Arc<AppState>> {
+    // Build the main API router
+    let api_routes = Router::new().route("/", get(Self::ping));
+
+    // Build the root router
+    Router::new()
+      .nest("/api", api_routes)
+  }
+
+  /// Returns 200 OK to indicate the service is running
+  pub async fn ping() -> Response {
+    (StatusCode::OK, "Ping!").into_response()
+  }
 }

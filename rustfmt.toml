@@ -14,7 +14,7 @@ trailing_comma = "Always"
 hard_tabs = false
 
 # Number of spaces per indentation level.
-tab_spaces = 4
+tab_spaces = 2
 
 # Use vertical layout for struct and enum fields when they exceed max_width.
 struct_field_align_threshold = 40

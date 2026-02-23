@@ -23,8 +23,10 @@ serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.149"
 # Utility to generate uuid
 uuid = { version = "1.20.0", features = ["v7"] }
-# ORM Database
-diesel = { version = "2.3", features = ["r2d2", "sqlite", "postgres"] }
+# ORM Database with sqlite
+diesel = { version = "2.3", features = ["r2d2", "sqlite"] }
+# ORM Database with postgres
+# diesel = { version = "2.3", features = ["r2d2", "postgres"] }
 r2d2 = "0.8"
 anyhow = "1.0"
 # Fetcher like fetch or axios
@@ -45,5 +47,4 @@ tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
 
 [dev-dependencies]
-tokio = { version = "1.49.0", features = ["full"] }
 tempfile = "3"

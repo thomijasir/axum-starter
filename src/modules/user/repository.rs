@@ -2,6 +2,36 @@ use super::model::{NewUser, User};
 use crate::{schemas::table::users, services::DBSqlite};
 use anyhow::{Result, anyhow};
 use diesel::prelude::*;
+
+pub async fn find_all(
+  db: &DBSqlite,
+  offset: i64,
+  limit: i64,
+) -> Result<(Vec<User>, i64)> {
+  let count = db
+    .execute(move |conn| {
+      users::table
+        .count()
+        .first::<i64>(conn)
+        .map_err(|e| anyhow!("DB error: {}", e))
+    })
+    .await?;
+
+  let results: Vec<User> = db
+    .execute(move |conn| {
+      users::table
+        .order(users::created_at.desc())
+        .offset(offset)
+        .limit(limit)
+        .select(User::as_select())
+        .load(conn)
+        .map_err(|e| anyhow!("DB error: {}", e))
+    })
+    .await?;
+
+  Ok((results, count))
+}
+
 /// Find a user by primary key. Returns `NOT_FOUND` if absent.
 pub async fn find_by_id(
   db: &DBSqlite,

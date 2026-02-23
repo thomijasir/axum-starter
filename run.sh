@@ -125,25 +125,30 @@ case "$cmd" in
     diesel migration create "$@"
     ;;
   db:migration:run)
+    load_env ".env.local"
     ensure_command diesel
     diesel migration run "$@"
     ;;
   db:migration:revert)
+    load_env ".env.local"
     ensure_command diesel
     diesel migration revert "$@"
     ;;
   db:migration:reset)
+    load_env ".env.local"
     ensure_command diesel
     diesel migration redo "$@"
     ;;
   db:migration:status)
+    load_env ".env.local"
     ensure_command diesel
     diesel migration list "$@"
     ;;
   db:migration:schema)
+    load_env ".env.local"
     ensure_command diesel
-    mkdir -p src/schema
-    diesel print-schema >src/schema/table.rs
+    mkdir -p src/schemas
+    diesel print-schema >src/schemas/table.rs
     ;;
 
   # ------------------ Docker ----------------

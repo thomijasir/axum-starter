@@ -1,5 +1,6 @@
 /target
 db.sqlite
+database.db
 
 # Uploaded files (keep directory structure)
 public/uploads/*

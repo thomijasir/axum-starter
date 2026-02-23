@@ -3,9 +3,9 @@ mod auth;
 mod user;
 
 use crate::{
-  models::{AppEnv, AppState},
+  models::{AppEnv, AppState, PaginatedResponse},
   modules::{
-    attachment::model::{AttachmentListResponse, AttachmentResponse, UpdateAttachmentRequest},
+    attachment::model::{AttachmentResponse, UpdateAttachmentRequest},
     auth::model::{AuthTokens, LoginRequest, RefreshRequest, RegisterRequest},
     user::model::UserResponse,
   },
@@ -53,7 +53,7 @@ pub struct HealthResponse {
             UserResponse,
             HealthResponse,
             AttachmentResponse,
-            AttachmentListResponse,
+            PaginatedResponse<AttachmentResponse>,
             UpdateAttachmentRequest,
         )
     ),

@@ -1,11 +1,11 @@
-use super::{model::{AttachmentListResponse, AttachmentResponse, NewAttachment, UpdateAttachmentRequest}, service};
+use super::{model::{AttachmentResponse, NewAttachment, UpdateAttachmentRequest}, service};
 use crate::{
     extractors::{AuthUser, BodyJson},
-    models::AppState,
-    utils::{files, HttpError, HttpResponse},
+    models::{AppState, PaginatedResponse},
+    utils::{files, HttpError, HttpResponse, PaginationQuery},
 };
 use axum::{
-    extract::{Multipart, Path, State},
+    extract::{Multipart, Path, Query, State},
     response::IntoResponse,
 };
 use std::sync::Arc;
@@ -88,16 +88,21 @@ pub async fn upload(
     path = "/attachments",
     tag = "attachments",
     security(("bearer_token" = [])),
+    params(
+        ("page" = Option<u32>, Query, description = "Page number (default: 1)"),
+        ("limit" = Option<u32>, Query, description = "Items per page (default: 20, max: 100)")
+    ),
     responses(
-        (status = 200, description = "List of user's attachments", body = AttachmentListResponse),
+        (status = 200, description = "Paginated list of user's attachments", body = PaginatedResponse<AttachmentResponse>),
         (status = 401, description = "Unauthorized")
     )
 )]
 pub async fn list(
     State(state): State<Arc<AppState>>,
     auth: AuthUser,
+    Query(pagination): Query<PaginationQuery>,
 ) -> Result<impl IntoResponse, HttpError> {
-    let result = service::find_by_user(&state.db, auth.user_id)
+    let result = service::find_by_user(&state.db, auth.user_id, pagination)
         .await
         .map_err(HttpError::from_service_error)?;
 

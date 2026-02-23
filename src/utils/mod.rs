@@ -15,6 +15,6 @@ pub use cache::Cache;
 pub use encrypt::{hash as hash_password, verify as verify_password};
 pub use generator::id as generate_id;
 pub use http_error::*;
-pub use http_response::{HttpResponse, pagination_response_formatted};
+pub use http_response::HttpResponse;
 pub use pagination::PaginationQuery;
 pub use token::{create_token, decode_token};

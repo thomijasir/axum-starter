@@ -1,5 +1,6 @@
-use crate::modules::attachment::model::{
-  AttachmentListResponse, AttachmentResponse, UpdateAttachmentRequest,
+use crate::{
+  models::PaginatedResponse,
+  modules::attachment::model::{AttachmentResponse, UpdateAttachmentRequest},
 };
 
 #[utoipa::path(
@@ -22,8 +23,18 @@ pub fn attachments_upload() {}
     path = "/attachments",
     tag = "attachments",
     security(("bearer_token" = [])),
+    params(
+        ("page" = Option<u32>, Query, description = "Page number (default: 1, example: 1)"),
+        ("limit" = Option<u32>, Query, description = "Items per page (default: 20, max: 100, example: 20)")
+    ),
     responses(
-        (status = 200, description = "List of user's attachments", body = AttachmentListResponse),
+        (status = 200, description = "Paginated list of user's attachments", body = PaginatedResponse<AttachmentResponse>, example = json!({
+            "page": 1,
+            "perPage": 20,
+            "totalItems": 45,
+            "totalPages": 3,
+            "items": []
+        })),
         (status = 401, description = "Unauthorized")
     )
 )]

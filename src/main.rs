@@ -8,9 +8,15 @@ use axum_starter::{
   utils::Cache,
 };
 
+// TODO
+// [Partial Done] camelcase response
+// [Partial Done] pagination
+// [Not started] implement custom extractor handle for multipart
+// [] Documentation still not perfect
+// [] Docker not tested yet
 #[tokio::main]
 async fn main() {
-  // Load Environment (also loads .env file via dotenvy)
+  // Load Environment (also loads .env file)
   let env = config::load_environment();
 
   // Initialize structured logging based on environment
@@ -34,13 +40,13 @@ async fn main() {
         .init();
     }
   }
-
-  tracing::info!(mode = %env.mode, port = env.port, "Starting axum-starter");
+  // Log Server information
+  tracing::info!(mode = %env.mode, port = env.port, "SERVER_START");
 
   // Create in-memory cache
   let cache = Cache::default();
   // Create DB connection pool
-  let db = DBSqlite::new(&env.database_url).expect("Failed to create database pool");
+  let db = DBSqlite::new(&env.database_url).expect("DATABASE_POOL_FAILURE");
   // Create App State
   let app_state = Arc::new(AppState { env, cache, db });
 

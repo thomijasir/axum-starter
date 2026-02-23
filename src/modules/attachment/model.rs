@@ -79,12 +79,6 @@ impl From<Attachment> for AttachmentResponse {
   }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
-pub struct AttachmentListResponse {
-  pub attachments: Vec<AttachmentResponse>,
-  pub total: usize,
-}
-
 #[derive(Debug, Clone, Deserialize, Validate, ToSchema)]
 pub struct UpdateAttachmentRequest {
   #[validate(length(min = 1, message = "Filename cannot be empty"))]

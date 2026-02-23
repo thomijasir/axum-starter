@@ -97,7 +97,7 @@ case "$cmd" in
     ;;
   dev)
     load_env ".env.local"
-    cargo run -- -- "$@"
+    cargo watch -q -c -w src/ -x run
     ;;
   dev:staging)
     load_env ".env.staging"

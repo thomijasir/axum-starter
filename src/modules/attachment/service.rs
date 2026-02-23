@@ -1,5 +1,8 @@
 use super::model::{Attachment, AttachmentResponse, NewAttachment, UpdateAttachmentRequest};
-use crate::{models::PaginatedResponse, services::DBSqlite, utils::PaginationQuery};
+use crate::{
+  models::{PaginatedResponse, PaginationQuery},
+  services::DBSqlite,
+};
 
 pub async fn find_by_id(
   db: &DBSqlite,

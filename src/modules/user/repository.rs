@@ -1,5 +1,5 @@
 use super::model::{NewUser, User};
-use crate::{schemas::table::users, services::DBSqlite};
+use crate::{schemas::table::users, services::DBSqlite, utils::to_u32};
 use anyhow::{Result, anyhow};
 use diesel::prelude::*;
 
@@ -7,7 +7,7 @@ pub async fn find_all(
   db: &DBSqlite,
   offset: i64,
   limit: i64,
-) -> Result<(Vec<User>, i64)> {
+) -> Result<(Vec<User>, u32)> {
   let count = db
     .execute(move |conn| {
       users::table
@@ -29,7 +29,7 @@ pub async fn find_all(
     })
     .await?;
 
-  Ok((results, count))
+  Ok((results, to_u32(count)))
 }
 
 /// Find a user by primary key. Returns `NOT_FOUND` if absent.

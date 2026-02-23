@@ -1,4 +1,4 @@
-use crate::schemas::table::users;
+use crate::{models::PaginationQuery, schemas::table::users};
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
@@ -48,4 +48,12 @@ impl From<User> for UserResponse {
       updated_at: u.updated_at,
     }
   }
+}
+
+// To Utilize Query Params
+#[derive(Debug, Clone, Deserialize)]
+pub struct UserQuery {
+  #[serde(flatten)]
+  pub pagination: PaginationQuery,
+  pub username: Option<String>,
 }

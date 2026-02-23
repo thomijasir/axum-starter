@@ -12,6 +12,8 @@ use axum_starter::{
 // [Partial Done] camelcase response
 // [Partial Done] pagination
 // [Not started] implement custom extractor handle for multipart
+// Bug
+// [] Production log not insight full
 // [] Documentation still not perfect
 // [] Docker not tested yet
 #[tokio::main]

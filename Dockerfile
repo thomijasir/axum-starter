@@ -1,16 +1,16 @@
 
-FROM rust:1.93 as builder
+FROM rust:1.83 as builder
 
 WORKDIR /app
 COPY . .
 # Build the binary
-RUN apt-get update && apt-get install -y pkg-config libssl-dev libpq-dev && cargo build --release
+RUN apt-get update && apt-get install -y pkg-config libssl-dev libpq-dev libsqlite3-dev && cargo build --release
 
 FROM debian:bookworm-slim
 
 WORKDIR /app
 # Copy the binary from the builder stage
-COPY --from=builder /app/target/release/axum-boilerplate /app/api
+COPY --from=builder /app/target/release/axum-starter /app/api
 # Install necessary runtime dependencies
 RUN apt-get update && apt install -y openssl libpq5
 # Add execute permissions to the binary

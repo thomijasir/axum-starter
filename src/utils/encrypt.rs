@@ -1,56 +1,56 @@
 use argon2::{
-    password_hash::{rand_core::OsRng, PasswordHash, PasswordHasher, PasswordVerifier, SaltString},
-    Argon2,
+  password_hash::{rand_core::OsRng, PasswordHash, PasswordHasher, PasswordVerifier, SaltString},
+  Argon2,
 };
 use std::fmt;
 
 /// Custom error type for password hashing operations
 #[derive(Debug)]
 pub enum PasswordError {
-    HashingError(String),
-    VerificationError(String),
-    HashingFailed,
-    HashingInvalid,
+  HashingError(String),
+  VerificationError(String),
+  HashingFailed,
+  HashingInvalid,
 }
 
 impl fmt::Display for PasswordError {
-    fn fmt(
-        &self,
-        f: &mut fmt::Formatter<'_>,
-    ) -> fmt::Result {
-        match self {
-            PasswordError::HashingInvalid => write!(f, "PASSWORD_HASHING_INVALID"),
-            PasswordError::HashingFailed => write!(f, "PASSWORD_HASHING_FAILED"),
-            PasswordError::HashingError(msg) => write!(f, "PASSWORD_HASHING_ERROR: {}", msg),
-            PasswordError::VerificationError(msg) => {
-                write!(f, "PASSWORD_VERIFICATION_ERROR: {}", msg)
-            }
-        }
+  fn fmt(
+    &self,
+    f: &mut fmt::Formatter<'_>,
+  ) -> fmt::Result {
+    match self {
+      PasswordError::HashingInvalid => write!(f, "PASSWORD_HASHING_INVALID"),
+      PasswordError::HashingFailed => write!(f, "PASSWORD_HASHING_FAILED"),
+      PasswordError::HashingError(msg) => write!(f, "PASSWORD_HASHING_ERROR: {}", msg),
+      PasswordError::VerificationError(msg) => {
+        write!(f, "PASSWORD_VERIFICATION_ERROR: {}", msg)
+      }
     }
+  }
 }
 
 impl std::error::Error for PasswordError {}
 
 // Simple version of hash_password
 pub fn hash(password: &str) -> Result<String, PasswordError> {
-    let salt = SaltString::generate(&mut OsRng);
-    let hashed_password = Argon2::default()
-        .hash_password(password.as_bytes(), &salt)
-        .map_err(|_| PasswordError::HashingFailed)?
-        .to_string();
-    Ok(hashed_password)
+  let salt = SaltString::generate(&mut OsRng);
+  let hashed_password = Argon2::default()
+    .hash_password(password.as_bytes(), &salt)
+    .map_err(|_| PasswordError::HashingFailed)?
+    .to_string();
+  Ok(hashed_password)
 }
 
 pub fn verify(
-    password: &str,
-    hashed_password: &str,
+  password: &str,
+  hashed_password: &str,
 ) -> Result<bool, PasswordError> {
-    let parsed_hash =
-        PasswordHash::new(hashed_password).map_err(|_| PasswordError::HashingInvalid)?;
-    let password_matches = Argon2::default()
-        .verify_password(password.as_bytes(), &parsed_hash)
-        .is_ok();
-    Ok(password_matches)
+  let parsed_hash =
+    PasswordHash::new(hashed_password).map_err(|_| PasswordError::HashingInvalid)?;
+  let password_matches = Argon2::default()
+    .verify_password(password.as_bytes(), &parsed_hash)
+    .is_ok();
+  Ok(password_matches)
 }
 
 // The hash string they provided is:

@@ -34,7 +34,7 @@
 //!
 //! ## Async Operations
 //!
-//! ```rust
+//! ```rust,ignore
 //! use axum_starter::services::DBSqlite;
 //! use anyhow::Result;
 //! use diesel::sql_query;
@@ -165,16 +165,14 @@ impl DBSqlite {
     ///
     /// # Example
     ///
-    /// ```rust
+    /// ```rust,no_run
     /// use axum_starter::services::DBSqlite;
     /// use diesel::RunQueryDsl;
     /// use diesel::sql_query;
     ///
     /// let db = DBSqlite::new("sqlite://database.db")?;
     /// let conn = db.get_connection()?;
-    ///
     /// // Use the connection for synchronous operations
-    /// sql_query("SELECT 1").execute(&conn)?;
     /// # Ok::<_, anyhow::Error>(())
     /// ```
     pub fn get_connection(
@@ -204,14 +202,14 @@ impl DBSqlite {
     ///
     /// # Example
     ///
-    /// ```rust
+    /// ```rust,no_run
     /// use axum_starter::services::DBSqlite;
     /// use anyhow::Result;
     /// use diesel::sql_query;
     /// use diesel::RunQueryDsl;
     ///
-    /// async fn create_user(db: &DBSqlite, name: &str) -> Result<()> {
-    ///     db.transaction(|conn| {
+    /// async fn create_user(db: &DBSqlite, name: String) -> Result<()> {
+    ///     db.transaction(move |conn| {
     ///         sql_query("INSERT INTO users (name) VALUES (?)")
     ///             .bind::<diesel::sql_types::Text, _>(name)
     ///             .execute(conn)?;

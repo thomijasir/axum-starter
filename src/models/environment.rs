@@ -41,6 +41,7 @@ pub struct Environment {
   pub database_url: String,
   pub timeout: u64,
   pub cors_origins: Vec<String>,
+  pub log_dir: String,
 }
 
 #[derive(Debug, Clone)]

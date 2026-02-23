@@ -53,6 +53,7 @@ impl NewAttachment {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+#[serde(rename_all = "camelCase")]
 pub struct AttachmentResponse {
   pub id: i32,
   pub user_id: String,
@@ -80,6 +81,7 @@ impl From<Attachment> for AttachmentResponse {
 }
 
 #[derive(Debug, Clone, Deserialize, Validate, ToSchema)]
+#[serde(rename_all = "camelCase")]
 pub struct UpdateAttachmentRequest {
   #[validate(length(min = 1, message = "Filename cannot be empty"))]
   pub filename: Option<String>,

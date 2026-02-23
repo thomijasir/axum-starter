@@ -30,6 +30,7 @@ pub struct NewUser {
 
 /// Public user DTO — password field omitted.
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+#[serde(rename_all = "camelCase")]
 pub struct UserResponse {
   pub id: String,
   pub email: String,

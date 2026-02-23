@@ -29,6 +29,7 @@ impl Display for ResponsesMessage {
 }
 
 #[derive(Debug, Clone, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct HttpResponseFormat<T = serde_json::Value>
 where
   T: serde::Serialize,

@@ -29,6 +29,8 @@ pub fn load_environment() -> Environment {
     .filter(|s| !s.is_empty())
     .collect::<Vec<String>>();
 
+  let log_dir = var("LOG_DIR").unwrap_or_else(|_| "logs".to_string());
+
   Environment {
     mode,
     secret,
@@ -36,5 +38,6 @@ pub fn load_environment() -> Environment {
     database_url,
     timeout,
     cors_origins,
+    log_dir,
   }
 }

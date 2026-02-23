@@ -7,6 +7,7 @@ use validator::Validate;
 // ─── Request bodies ──────────────────────────────────────────────────────────
 
 #[derive(Debug, Deserialize, Validate, ToSchema)]
+#[serde(rename_all = "camelCase")]
 pub struct RegisterRequest {
   #[validate(email(message = "Must be a valid email address"))]
   pub email: String,
@@ -17,6 +18,7 @@ pub struct RegisterRequest {
 }
 
 #[derive(Debug, Deserialize, Validate, ToSchema)]
+#[serde(rename_all = "camelCase")]
 pub struct LoginRequest {
   #[validate(email(message = "Must be a valid email address"))]
   pub email: String,
@@ -24,6 +26,7 @@ pub struct LoginRequest {
 }
 
 #[derive(Debug, Deserialize, Validate, ToSchema)]
+#[serde(rename_all = "camelCase")]
 pub struct RefreshRequest {
   #[validate(length(min = 1, message = "refresh_token must not be empty"))]
   pub refresh_token: String,
@@ -32,6 +35,7 @@ pub struct RefreshRequest {
 // ─── Response bodies ─────────────────────────────────────────────────────────
 
 #[derive(Debug, Serialize, ToSchema)]
+#[serde(rename_all = "camelCase")]
 pub struct AuthTokens {
   pub access_token: String,
   pub refresh_token: String,

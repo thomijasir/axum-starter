@@ -52,10 +52,10 @@ impl Cache {
     key: &str,
   ) -> Option<Value> {
     let store = self.store.read().await;
-    if let Some(entry) = store.get(key) {
-      if entry.expires > Instant::now() {
-        return Some(entry.data.clone());
-      }
+    if let Some(entry) = store.get(key)
+      && entry.expires > Instant::now()
+    {
+      return Some(entry.data.clone());
     }
     None
   }

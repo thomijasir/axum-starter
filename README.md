@@ -21,7 +21,7 @@ A production-ready Rust API starter kit built with Axum, featuring JWT authentic
 cargo test
 
 # View API docs (development only)
-open http://localhost:3000/swagger-ui
+open http://localhost:3000/spec
 ```
 
 ## Task Runner (`run.sh`)

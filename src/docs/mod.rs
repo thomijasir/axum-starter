@@ -1,6 +1,11 @@
+mod attachment;
+mod auth;
+mod user;
+
 use crate::{
   models::{AppEnv, AppState},
   modules::{
+    attachment::model::{AttachmentListResponse, AttachmentResponse, UpdateAttachmentRequest},
     auth::model::{AuthTokens, LoginRequest, RefreshRequest, RegisterRequest},
     user::model::UserResponse,
   },
@@ -13,7 +18,6 @@ use utoipa::{
 };
 use utoipa_swagger_ui::SwaggerUi;
 
-/// Health check response schema (empty data payload)
 #[derive(utoipa::ToSchema)]
 pub struct HealthResponse {
   pub success: bool,
@@ -30,10 +34,15 @@ pub struct HealthResponse {
     paths(
         health_live,
         health_ready,
-        auth_register,
-        auth_login,
-        auth_refresh,
-        users_me,
+        auth::auth_register,
+        auth::auth_login,
+        auth::auth_refresh,
+        user::users_me,
+        attachment::attachments_upload,
+        attachment::attachments_list,
+        attachment::attachments_get,
+        attachment::attachments_update,
+        attachment::attachments_delete,
     ),
     components(
         schemas(
@@ -43,6 +52,9 @@ pub struct HealthResponse {
             AuthTokens,
             UserResponse,
             HealthResponse,
+            AttachmentResponse,
+            AttachmentListResponse,
+            UpdateAttachmentRequest,
         )
     ),
     modifiers(&SecurityAddon),
@@ -50,11 +62,13 @@ pub struct HealthResponse {
         (name = "health", description = "Health check endpoints"),
         (name = "auth", description = "Authentication endpoints"),
         (name = "users", description = "User endpoints"),
+        (name = "attachments", description = "File attachment endpoints"),
     )
 )]
 pub struct ApiDoc;
 
 struct SecurityAddon;
+
 impl utoipa::Modify for SecurityAddon {
   fn modify(
     &self,
@@ -73,8 +87,6 @@ impl utoipa::Modify for SecurityAddon {
     }
   }
 }
-
-// ─── Dummy path handlers (utoipa path annotations only — real handlers are elsewhere) ─
 
 #[utoipa::path(
     get,
@@ -99,70 +111,13 @@ fn health_live() {}
 #[allow(dead_code)]
 fn health_ready() {}
 
-#[utoipa::path(
-    post,
-    path = "/auth/register",
-    tag = "auth",
-    request_body = RegisterRequest,
-    responses(
-        (status = 201, description = "User registered successfully", body = AuthTokens),
-        (status = 400, description = "Validation error"),
-        (status = 409, description = "Email already exists")
-    )
-)]
-#[allow(dead_code)]
-fn auth_register() {}
-
-#[utoipa::path(
-    post,
-    path = "/auth/login",
-    tag = "auth",
-    request_body = LoginRequest,
-    responses(
-        (status = 200, description = "Login successful", body = AuthTokens),
-        (status = 401, description = "Invalid credentials")
-    )
-)]
-#[allow(dead_code)]
-fn auth_login() {}
-
-#[utoipa::path(
-    post,
-    path = "/auth/refresh",
-    tag = "auth",
-    request_body = RefreshRequest,
-    responses(
-        (status = 200, description = "Token refreshed", body = AuthTokens),
-        (status = 401, description = "Invalid or expired refresh token")
-    )
-)]
-#[allow(dead_code)]
-fn auth_refresh() {}
-
-#[utoipa::path(
-    get,
-    path = "/users/me",
-    tag = "users",
-    security(("bearer_token" = [])),
-    responses(
-        (status = 200, description = "Current user profile", body = UserResponse),
-        (status = 401, description = "Unauthorized")
-    )
-)]
-#[allow(dead_code)]
-fn users_me() {}
-
-// ─── Router builder ──────────────────────────────────────────────────────────
-
-/// Mount Swagger UI at `/swagger-ui/` and the raw OpenAPI JSON at `/api-docs/openapi.json`.
-/// **Only mounted in non-production environments.**
 pub fn swagger_router(state: &Arc<AppState>) -> Option<Router<Arc<AppState>>> {
   if matches!(state.env.mode, AppEnv::Production) {
     return None;
   }
 
   Some(
-    SwaggerUi::new("/swagger-ui")
+    SwaggerUi::new("/spec")
       .url("/api-docs/openapi.json", ApiDoc::openapi())
       .into(),
   )

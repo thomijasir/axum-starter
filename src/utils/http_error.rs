@@ -73,6 +73,7 @@ impl HttpError {
       "REFRESH_TOKEN_EXPIRED" => Self::unauthorized("REFRESH_TOKEN_EXPIRED"),
       "TOKEN_CREATE_FAILED" => Self::server_error("TOKEN_CREATE_FAILED"),
       "PASSWORD_HASH_FAILED" => Self::server_error("PASSWORD_HASH_FAILED"),
+      "ATTACHMENT_NOT_FOUND" => Self::not_found("ATTACHMENT_NOT_FOUND"),
       _ => {
         tracing::error!(error = %e, "unhandled service error");
         Self::server_error("INTERNAL_SERVER_ERROR")

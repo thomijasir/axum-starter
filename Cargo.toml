@@ -7,7 +7,7 @@ edition = "2024"
 # Asynchronous runtime for Rust
 tokio = { version = "1.49.0", features = ["full"] }
 # Main web framework for building APIs
-axum = "0.8"
+axum = { version = "0.8", features = ["multipart"] }
 # Tower middleware and HTTP utilities for axum
 tower = { version = "0.5", features = ["timeout", "buffer", "limit"] }
 tower-http = { version = "0.6", features = [
@@ -40,8 +40,6 @@ argon2 = "0.5"
 rand = "0.8"
 # Field validation
 validator = { version = "0.19", features = ["derive"] }
-# Multipart form data
-axum_typed_multipart = "0.14"
 # Structured logging
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }

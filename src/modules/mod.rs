@@ -4,6 +4,7 @@ pub mod health;
 pub mod user;
 
 use crate::{docs, models::AppState};
+use attachment::AttachmentRoutes;
 use auth::AuthRoutes;
 use axum::{
   Router,
@@ -27,7 +28,8 @@ impl AppRoutes {
       .nest("/api", api_routes)
       .merge(HealthRoutes::build())
       .merge(AuthRoutes::build())
-      .merge(UserRoutes::build());
+      .merge(UserRoutes::build())
+      .merge(AttachmentRoutes::build());
 
     // Swagger UI only in non-production environments
     if let Some(swagger) = docs::swagger_router(&state) {

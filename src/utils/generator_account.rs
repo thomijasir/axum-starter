@@ -111,13 +111,13 @@ impl AccountNumberGenerator {
 
     // Validate existing account number formats if any exist
     for num in &existing_numbers {
-      if let Some(prefix) = &config.prefix {
-        if !num.starts_with(prefix) {
-          return Err(AccountGeneratorError::ValidationFailed(format!(
-            "Existing number {} doesn't match required prefix {}",
-            num, prefix
-          )));
-        }
+      if let Some(prefix) = &config.prefix
+        && !num.starts_with(prefix)
+      {
+        return Err(AccountGeneratorError::ValidationFailed(format!(
+          "Existing number {} doesn't match required prefix {}",
+          num, prefix
+        )));
       }
 
       // Check lengths match the configuration
@@ -224,7 +224,7 @@ impl AccountNumberGenerator {
     }
 
     // Handle odd length
-    if self.config.length % 2 != 0 {
+    if !self.config.length.is_multiple_of(2) {
       number.push_str(&rng.gen_range(0..10).to_string());
     }
 
@@ -287,7 +287,7 @@ impl AccountNumberGenerator {
     }
 
     // For odd length, add middle digit
-    if self.config.length % 2 != 0 {
+    if !self.config.length.is_multiple_of(2) {
       number.push_str(&rng.gen_range(0..10).to_string());
     }
 

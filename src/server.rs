@@ -52,8 +52,7 @@ impl AppServer {
     tracing::info!("Listening on {}", addr);
     axum::serve(listener, app)
       .with_graceful_shutdown(Self::shutdown_signal())
-      .await
-      .map_err(|err| err)?;
+      .await?;
     Ok(())
   }
 

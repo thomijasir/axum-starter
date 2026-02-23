@@ -90,7 +90,7 @@ This document defines the do's and don'ts for working with this codebase.
 
 | Feature | Development | Production |
 |---------|-------------|------------|
-| Swagger UI | Enabled at `/swagger-ui` | Disabled |
+| Swagger UI | Enabled at `/spec` | Disabled |
 | Database | SQLite | PostgreSQL |
 | CORS | Permissive | Strict origins from config |
 | Error details | Verbose | Minimal |
@@ -103,7 +103,9 @@ This document defines the do's and don'ts for working with this codebase.
 4. Define routes in `mod.rs`
 5. Register routes in `src/modules/mod.rs`
 6. Add error codes to `HttpError::from_service_error()`
-7. Write integration tests
+7. Create documentation in `src/docs/{module}.rs`
+8. Add paths and schemas to `ApiDoc` in `src/docs/mod.rs`
+9. Write integration tests
 
 ### When Adding New Endpoints
 
@@ -112,7 +114,9 @@ This document defines the do's and don'ts for working with this codebase.
 3. Create service function with `anyhow::Result`
 4. Create controller handler with `HttpError` return
 5. Add route to module's `Routes::build()`
-6. Test with authenticated and unauthenticated requests
+6. Add `#[utoipa::path]` documentation in `src/docs/{module}.rs`
+7. Register path and schemas in `src/docs/mod.rs`
+8. Test with authenticated and unauthenticated requests
 
 ## Common Patterns
 

@@ -43,7 +43,7 @@ async fn get_me_with_valid_token_returns_200() {
   let reg_resp = app.register(EMAIL, USERNAME, PASSWORD).await;
   assert_eq!(reg_resp.status(), 201);
   let reg_body: serde_json::Value = reg_resp.json().await.unwrap();
-  let access_token = reg_body["data"]["access_token"].as_str().unwrap();
+  let access_token = reg_body["data"]["accessToken"].as_str().unwrap();
 
   // Call /users/me with the token
   let resp = app

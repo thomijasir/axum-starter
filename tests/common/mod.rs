@@ -35,6 +35,7 @@ impl TestApp {
       database_url: db_path,
       timeout: 300,
       cors_origins: vec!["http://localhost:3000".to_string()],
+      log_dir: "/tmp".to_string(),
     };
 
     let cache = Cache::default();

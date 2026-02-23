@@ -3,15 +3,19 @@ use super::{
   service,
 };
 use crate::{
-  extractors::{AuthUser, BodyJson},
+  extractors::{AuthUser, BodyJson, MultipartForm},
   models::{AppState, PaginatedResponse, PaginationQuery},
   utils::{HttpError, HttpResponse, files},
 };
 use axum::{
-  extract::{Multipart, Path, Query, State},
+  extract::{Path, Query, State},
   response::IntoResponse,
 };
+use serde::Deserialize;
 use std::sync::Arc;
+
+#[derive(Debug, Deserialize, validator::Validate)]
+pub struct UploadForm {}
 
 #[utoipa::path(
     post,
@@ -28,38 +32,18 @@ use std::sync::Arc;
 pub async fn upload(
   State(state): State<Arc<AppState>>,
   auth: AuthUser,
-  mut multipart: Multipart,
+  MultipartForm { fields: _, files }: MultipartForm<UploadForm>,
 ) -> Result<impl IntoResponse, HttpError> {
-  let mut filename = None;
-  let mut mime_type = None;
-  let mut contents = None;
+  let file = files.get("file").ok_or_else(|| HttpError::bad_request("NO_FILE_PROVIDED"))?;
 
-  while let Some(field) = multipart.next_field().await.map_err(|e| {
-    tracing::error!(error = %e, "Failed to read multipart field");
-    HttpError::bad_request("INVALID_MULTIPART_DATA")
-  })? {
-    let name = field.name().unwrap_or("").to_string();
-
-    if name == "file" {
-      filename = field.file_name().map(|s| s.to_string());
-      mime_type = field.content_type().map(|s| s.to_string());
-      contents = Some(field.bytes().await.map_err(|e| {
-        tracing::error!(error = %e, "Failed to read file bytes");
-        HttpError::bad_request("FAILED_TO_READ_FILE")
-      })?);
-      break;
-    }
-  }
-
-  let filename = filename.unwrap_or_else(|| "unknown".to_string());
-  let mime_type = mime_type.unwrap_or_else(|| "application/octet-stream".to_string());
-  let contents = contents.ok_or_else(|| HttpError::bad_request("NO_FILE_PROVIDED"))?;
-
-  let size = contents.len() as i32;
-
-  if size == 0 {
+  if file.is_empty() {
     return Err(HttpError::bad_request("EMPTY_FILE"));
   }
+
+  let filename = file.filename.clone();
+  let mime_type = file.content_type.clone();
+  let contents = file.bytes.clone();
+  let size = file.size as i32;
 
   let user_id = auth.user_id.clone();
   let file_path = format!("{}/{}", user_id, filename);

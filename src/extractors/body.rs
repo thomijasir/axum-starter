@@ -48,14 +48,14 @@ fn format_validation_errors(errors: &ValidationErrors) -> String {
             parts.push(format!("{k}={v}"));
           }
 
-          parts.join(" | ")
+          parts.join("|")
         })
         .collect();
 
       if formatted.is_empty() {
-        format!("{field} | Invalid value")
+        format!("{field}|Invalid value")
       } else {
-        format!("{field} | {}", formatted.join(", "))
+        format!("{field}|{}", formatted.join(", "))
       }
     })
     .collect::<Vec<String>>()
@@ -83,7 +83,7 @@ where
     let Json(value) = Json::<T>::from_request(req, state)
       .await
       // Map Axum's JsonRejection to our HttpError::bad_request
-      .map_err(|e| HttpError::bad_request(format!("INVALID_BODY_REQUEST:{}", e)))?;
+      .map_err(|e| HttpError::bad_request(format!("INVALID_BODY_REQUEST|{}", e)))?;
 
     // 2. Attempt to validate the deserialized value using the validator crate
     value
@@ -91,7 +91,7 @@ where
       // Format the validation errors using our helper function
       .map_err(|e| {
         HttpError::bad_request(format!(
-          "INVALID_VALIDATION | {}",
+          "INVALID_VALIDATION|{}",
           format_validation_errors(&e)
         ))
       })?;

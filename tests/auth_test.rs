@@ -14,8 +14,8 @@ async fn register_new_user_returns_201() {
   assert_eq!(resp.status(), 201);
   let body: serde_json::Value = resp.json().await.unwrap();
   assert_eq!(body["success"], true);
-  assert!(body["data"]["access_token"].is_string());
-  assert!(body["data"]["refresh_token"].is_string());
+  assert!(body["data"]["accessToken"].is_string());
+  assert!(body["data"]["refreshToken"].is_string());
 }
 
 #[tokio::test]
@@ -39,7 +39,7 @@ async fn login_with_correct_credentials_returns_200() {
   let resp = app.login(EMAIL, PASSWORD).await;
   assert_eq!(resp.status(), 200);
   let body: serde_json::Value = resp.json().await.unwrap();
-  assert!(body["data"]["access_token"].is_string());
+  assert!(body["data"]["accessToken"].is_string());
 }
 
 #[tokio::test]
@@ -66,21 +66,20 @@ async fn refresh_with_valid_token_returns_200() {
 
   let reg_resp = app.register(EMAIL, USERNAME, PASSWORD).await;
   let reg_body: serde_json::Value = reg_resp.json().await.unwrap();
-  let refresh_token = reg_body["data"]["refresh_token"].as_str().unwrap();
+  let refresh_token = reg_body["data"]["refreshToken"].as_str().unwrap();
 
   let resp = app
     .client
     .post(format!("{}/auth/refresh", app.address))
-    .json(&serde_json::json!({ "refresh_token": refresh_token }))
+    .json(&serde_json::json!({ "refreshToken": refresh_token }))
     .send()
     .await
     .expect("request failed");
 
   assert_eq!(resp.status(), 200);
   let body: serde_json::Value = resp.json().await.unwrap();
-  assert!(body["data"]["access_token"].is_string());
-  // New refresh token should differ from the original
-  let new_rt = body["data"]["refresh_token"].as_str().unwrap();
+  assert!(body["data"]["accessToken"].is_string());
+  let new_rt = body["data"]["refreshToken"].as_str().unwrap();
   assert_ne!(new_rt, refresh_token);
 }
 
@@ -91,7 +90,7 @@ async fn refresh_with_invalid_token_returns_401() {
   let resp = app
     .client
     .post(format!("{}/auth/refresh", app.address))
-    .json(&serde_json::json!({ "refresh_token": "completely-fake-token" }))
+    .json(&serde_json::json!({ "refreshToken": "completely-fake-token" }))
     .send()
     .await
     .expect("request failed");

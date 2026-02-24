@@ -1,7 +1,7 @@
 use crate::{
   models::{AppEnv, AppState, PaginatedResponse},
   modules::{
-    attachment::controller as attachment_controller,
+    attachment::controller::{self as attachment_controller, UploadForm},
     attachment::model::{AttachmentResponse, UpdateAttachmentRequest},
     auth::{
       controller as auth_controller,
@@ -58,6 +58,7 @@ pub struct HealthResponse {
             PaginatedResponse<AttachmentResponse>,
             PaginatedResponse<UserResponse>,
             UpdateAttachmentRequest,
+            UploadForm,
         )
     ),
     modifiers(&SecurityAddon),

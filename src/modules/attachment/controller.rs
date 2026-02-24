@@ -3,13 +3,13 @@ use super::{
   service,
 };
 use crate::{
-  extractors::{AuthUser, BodyJson, MultipartForm},
+  extractors::{AuthUser, BodyJson, MultipartForm, PathParam},
   models::{AppState, PaginatedResponse, PaginationQuery},
   services::{HttpError, HttpResponse},
-  utils::files,
+  utils::{files, string::slugify_filename},
 };
 use axum::{
-  extract::{Path, Query, State},
+  extract::{Query, State},
   response::IntoResponse,
 };
 use serde::Deserialize;
@@ -26,15 +26,20 @@ const ALLOWED_MIME_TYPES: &[&str] = &[
   "text/csv",
 ];
 
-#[derive(Debug, Deserialize, validator::Validate)]
-pub struct UploadForm {}
+#[derive(Debug, Deserialize, validator::Validate, utoipa::ToSchema)]
+pub struct UploadForm {
+  /// The file to upload
+  #[serde(default)]
+  #[schema(format = Binary, required = true)]
+  pub file: String,
+}
 
 #[utoipa::path(
     post,
     path = "/attachments/upload",
     tag = "attachments",
     security(("bearer_token" = [])),
-    request_body(content_type = "multipart/form-data"),
+    request_body(content_type = "multipart/form-data", content = inline(UploadForm)),
     responses(
         (status = 201, description = "File uploaded successfully", body = AttachmentResponse),
         (status = 400, description = "Invalid file or missing file"),
@@ -46,7 +51,9 @@ pub async fn upload(
   auth: AuthUser,
   MultipartForm { fields: _, files }: MultipartForm<UploadForm>,
 ) -> Result<impl IntoResponse, HttpError> {
-  let file = files.get("file").ok_or_else(|| HttpError::bad_request("NO_FILE_PROVIDED"))?;
+  let file = files
+    .get("file")
+    .ok_or_else(|| HttpError::bad_request("NO_FILE_PROVIDED"))?;
 
   if file.is_empty() {
     return Err(HttpError::bad_request("EMPTY_FILE"));
@@ -60,12 +67,12 @@ pub async fn upload(
     )));
   }
 
-  // Sanitize filename: strip any directory components to prevent path traversal
-  let sanitized_filename = FsPath::new(&file.filename)
+  // Sanitize filename: strip directory components (path traversal) then slugify
+  let base_filename = FsPath::new(&file.filename)
     .file_name()
     .and_then(|n| n.to_str())
-    .ok_or_else(|| HttpError::bad_request("INVALID_FILENAME"))?
-    .to_string();
+    .ok_or_else(|| HttpError::bad_request("INVALID_FILENAME"))?;
+  let sanitized_filename = slugify_filename(base_filename);
 
   let mime_type = file.content_type.clone();
   let contents = file.bytes.clone();
@@ -138,7 +145,7 @@ pub async fn list(
 pub async fn get_by_id(
   State(state): State<Arc<AppState>>,
   auth: AuthUser,
-  Path(id): Path<i32>,
+  PathParam(id): PathParam<i32>,
 ) -> Result<impl IntoResponse, HttpError> {
   let attachment = service::find_by_id(&state.db, id)
     .await
@@ -169,7 +176,7 @@ pub async fn get_by_id(
 pub async fn update(
   State(state): State<Arc<AppState>>,
   auth: AuthUser,
-  Path(id): Path<i32>,
+  PathParam(id): PathParam<i32>,
   BodyJson(body): BodyJson<UpdateAttachmentRequest>,
 ) -> Result<impl IntoResponse, HttpError> {
   let attachment = service::update(&state.db, id, auth.user_id, body)
@@ -188,7 +195,7 @@ pub async fn update(
     tag = "attachments",
     security(("bearer_token" = [])),
     params(
-        ("id" = i32, Path, description = "Attachment ID")
+        ("id" = String, Path, description = "Attachment ID")
     ),
     responses(
         (status = 200, description = "Attachment deleted"),
@@ -199,7 +206,7 @@ pub async fn update(
 pub async fn delete(
   State(state): State<Arc<AppState>>,
   auth: AuthUser,
-  Path(id): Path<i32>,
+  PathParam(id): PathParam<i32>,
 ) -> Result<impl IntoResponse, HttpError> {
   let attachment = service::delete(&state.db, id, auth.user_id)
     .await

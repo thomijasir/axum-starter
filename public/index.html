@@ -1,419 +1,1154 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Axum Starter Kit - Production Ready Rust API</title>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Axum Starter — Production-Ready Rust API</title>
     <style>
-        :root {
-            --primary: #FF3E00; /* Rust orange-ish */
-            --secondary: #2C3E50;
-            --bg: #0f172a;
-            --surface: #1e293b;
-            --text: #f8fafc;
-            --text-muted: #94a3b8;
-            --accent: #38bdf8;
-            --success: #22c55e;
-            --font-main: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-        }
+      :root {
+        --rust: #ff3e00;
+        --rust2: #ff8f00;
+        --bg: #0f172a;
+        --surface: #1e293b;
+        --card: #1e293b;
+        --card2: #263348;
+        --border: rgba(255, 255, 255, 0.08);
+        --text: #f1f5f9;
+        --muted: #94a3b8;
+        --accent: #38bdf8;
+        --green: #22c55e;
+        --yellow: #f6c343;
+        --mono:
+          ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        --sans:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
+          Arial, sans-serif;
+      }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+      *,
+      *::before,
+      *::after {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html {
+        scroll-behavior: smooth;
+      }
+      body {
+        font-family: var(--sans);
+        background: var(--bg);
+        color: var(--text);
+        line-height: 1.65;
+        -webkit-font-smoothing: antialiased;
+      }
+      a {
+        color: var(--accent);
+        text-decoration: none;
+      }
+      a:hover {
+        text-decoration: underline;
+      }
+      .container {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 0 2rem;
+      }
 
-        body {
-            font-family: var(--font-main);
-            background-color: var(--bg);
-            color: var(--text);
-            line-height: 1.6;
-            overflow-x: hidden;
-        }
+      /* NAV */
+      nav {
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        background: rgba(15, 23, 42, 0.88);
+        backdrop-filter: blur(12px);
+        border-bottom: 1px solid var(--border);
+      }
+      .nav-inner {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1rem 2rem;
+        max-width: 1100px;
+        margin: 0 auto;
+      }
+      .logo {
+        font-size: 1.125rem;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        background: linear-gradient(to right, var(--rust), var(--rust2));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+      .nav-links {
+        display: flex;
+        gap: 2rem;
+      }
+      .nav-links a {
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: var(--muted);
+        transition: color 0.15s;
+      }
+      .nav-links a:hover {
+        color: var(--text);
+        text-decoration: none;
+      }
+      .nav-badge {
+        font-size: 0.75rem;
+        font-weight: 600;
+        padding: 0.25rem 0.7rem;
+        border-radius: 2rem;
+        background: var(--rust);
+        color: #fff !important;
+      }
+      .nav-badge:hover {
+        text-decoration: none;
+        opacity: 0.88;
+      }
 
-        a { color: var(--accent); text-decoration: none; transition: color 0.2s; }
-        a:hover { color: #7dd3fc; }
+      /* HERO */
+      .hero {
+        padding: 7rem 0 5rem;
+        text-align: center;
+        background: radial-gradient(
+          ellipse 80% 50% at 50% -10%,
+          rgba(255, 62, 0, 0.12),
+          transparent
+        );
+      }
+      .hero-eyebrow {
+        display: inline-block;
+        margin-bottom: 1.25rem;
+        font-size: 0.7rem;
+        font-weight: 700;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--rust);
+        opacity: 0.9;
+      }
+      h1 {
+        font-size: clamp(2.25rem, 5vw, 3.5rem);
+        font-weight: 800;
+        line-height: 1.1;
+        letter-spacing: -0.03em;
+        margin-bottom: 1.5rem;
+      }
+      h1 span {
+        color: var(--rust);
+      }
+      .hero-sub {
+        font-size: 1.125rem;
+        color: var(--muted);
+        max-width: 560px;
+        margin: 0 auto 2.5rem;
+      }
+      .chip-row {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 0.5rem;
+        margin-bottom: 2.5rem;
+      }
+      .chip {
+        font-size: 0.75rem;
+        font-weight: 600;
+        padding: 0.3rem 0.75rem;
+        border-radius: 2rem;
+        background: var(--card2);
+        border: 1px solid var(--border);
+        color: var(--muted);
+        letter-spacing: 0.02em;
+      }
+      .cta-row {
+        display: flex;
+        justify-content: center;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+      }
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        font-size: 0.875rem;
+        font-weight: 600;
+        padding: 0.65rem 1.4rem;
+        border-radius: 0.5rem;
+        transition:
+          opacity 0.15s,
+          transform 0.1s;
+      }
+      .btn:hover {
+        opacity: 0.88;
+        transform: translateY(-1px);
+        text-decoration: none;
+      }
+      .btn-primary {
+        background: var(--rust);
+        color: #fff;
+      }
+      .btn-ghost {
+        background: var(--card2);
+        color: var(--text);
+        border: 1px solid var(--border);
+      }
 
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 2rem;
-        }
+      /* SECTIONS */
+      section {
+        padding: 5rem 0;
+      }
+      .section-label {
+        font-size: 0.7rem;
+        font-weight: 700;
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        color: var(--rust);
+        margin-bottom: 0.75rem;
+      }
+      h2 {
+        font-size: clamp(1.5rem, 3vw, 2rem);
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        margin-bottom: 0.75rem;
+      }
+      .section-desc {
+        color: var(--muted);
+        max-width: 560px;
+        margin-bottom: 3rem;
+      }
 
-        /* Header */
-        header {
-            padding: 2rem 0;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-        }
-        nav {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .logo {
-            font-size: 1.5rem;
-            font-weight: 800;
-            background: linear-gradient(to right, var(--primary), #FF8F00);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-        .nav-links { display: flex; gap: 2rem; }
-        .nav-links a { font-weight: 500; color: var(--text-muted); }
-        .nav-links a:hover { color: var(--text); }
+      /* GRIDS */
+      .grid-3 {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 1.25rem;
+      }
+      .grid-2 {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: 2.5rem;
+        align-items: start;
+      }
 
-        /* Hero */
+      /* CARDS */
+      .card {
+        background: var(--card2);
+        border: 1px solid var(--border);
+        border-radius: 0.875rem;
+        padding: 1.75rem;
+        transition:
+          border-color 0.2s,
+          transform 0.2s;
+      }
+      .card:hover {
+        border-color: rgba(255, 255, 255, 0.16);
+        transform: translateY(-3px);
+      }
+      .card-icon {
+        width: 2.5rem;
+        height: 2.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(255, 62, 0, 0.12);
+        border-radius: 0.5rem;
+        font-size: 1.125rem;
+        margin-bottom: 1rem;
+      }
+      .card h3 {
+        font-size: 1rem;
+        font-weight: 700;
+        margin-bottom: 0.4rem;
+      }
+      .card p {
+        font-size: 0.875rem;
+        color: var(--muted);
+        line-height: 1.6;
+      }
+
+      /* CODE */
+      pre,
+      code {
+        font-family: var(--mono);
+      }
+      pre {
+        background: #0d1117;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 0.75rem;
+        padding: 1.5rem;
+        overflow-x: auto;
+        font-size: 0.8125rem;
+        line-height: 1.75;
+        color: #c9d1d9;
+        white-space: pre;
+      }
+      code {
+        background: rgba(255, 255, 255, 0.08);
+        padding: 0.15em 0.4em;
+        border-radius: 4px;
+        font-size: 0.85em;
+        color: #fb923c;
+      }
+      pre code {
+        background: none;
+        padding: 0;
+        color: inherit;
+        font-size: inherit;
+      }
+
+      /* syntax tokens */
+      .t-comment {
+        color: #6a737d;
+        font-style: italic;
+      }
+      .t-keyword {
+        color: #ff7b72;
+      }
+      .t-type {
+        color: #79c0ff;
+      }
+      .t-fn {
+        color: #d2a8ff;
+      }
+      .t-string {
+        color: #a5d6ff;
+      }
+      .t-macro {
+        color: #ffa657;
+      }
+
+      /* file tree — uses <pre> so whitespace is always preserved */
+      .file-tree {
+        background: #0d1117;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 0.75rem;
+        padding: 1.5rem 1.75rem;
+        font-family: var(--mono);
+        font-size: 0.8rem;
+        line-height: 1.85;
+        color: #8b949e;
+        white-space: pre;
+        overflow-x: auto;
+      }
+      .file-tree .dir {
+        color: #79c0ff;
+        font-weight: 600;
+      }
+      .file-tree .file {
+        color: #c9d1d9;
+      }
+      .file-tree .note {
+        color: #6a737d;
+      }
+
+      /* LAYER DIAGRAM */
+      .layers {
+        display: flex;
+        flex-direction: column;
+      }
+      .layer {
+        padding: 1rem 1.5rem;
+        background: var(--card2);
+        border: 1px solid var(--border);
+        border-bottom: none;
+      }
+      .layer:first-child {
+        border-radius: 0.75rem 0.75rem 0 0;
+      }
+      .layer:last-child {
+        border-radius: 0 0 0.75rem 0.75rem;
+        border-bottom: 1px solid var(--border);
+      }
+      .layer-header {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 0.25rem;
+      }
+      .layer-badge {
+        font-size: 0.65rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        padding: 0.2rem 0.55rem;
+        border-radius: 0.25rem;
+      }
+      .badge-ctrl {
+        background: rgba(56, 189, 248, 0.2);
+        color: #38bdf8;
+      }
+      .badge-svc {
+        background: rgba(34, 197, 94, 0.2);
+        color: #22c55e;
+      }
+      .badge-repo {
+        background: rgba(246, 195, 67, 0.2);
+        color: #f6c343;
+      }
+      .layer h4 {
+        font-size: 0.9375rem;
+        font-weight: 700;
+      }
+      .layer p {
+        font-size: 0.8125rem;
+        color: var(--muted);
+        margin-top: 0.15rem;
+      }
+      .arrow-down {
+        text-align: center;
+        padding: 0.35rem 0;
+        color: var(--muted);
+        font-size: 1rem;
+        border-left: 1px solid var(--border);
+        border-right: 1px solid var(--border);
+        background: var(--card2);
+      }
+
+      /* TABLE */
+      .table-wrap {
+        overflow-x: auto;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.8125rem;
+      }
+      th {
+        padding: 0.65rem 1rem;
+        text-align: left;
+        font-size: 0.7rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--muted);
+        border-bottom: 1px solid var(--border);
+      }
+      td {
+        padding: 0.65rem 1rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+        vertical-align: top;
+      }
+      tr:last-child td {
+        border-bottom: none;
+      }
+      td code {
+        font-size: 0.8em;
+      }
+      .method {
+        display: inline-block;
+        font-size: 0.65rem;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        padding: 0.15rem 0.45rem;
+        border-radius: 0.25rem;
+      }
+      .m-get {
+        background: rgba(34, 197, 94, 0.15);
+        color: #22c55e;
+      }
+      .m-post {
+        background: rgba(56, 189, 248, 0.15);
+        color: #38bdf8;
+      }
+      .m-patch {
+        background: rgba(246, 195, 67, 0.15);
+        color: #f6c343;
+      }
+      .m-delete {
+        background: rgba(255, 80, 80, 0.15);
+        color: #ff6b6b;
+      }
+
+      /* DOC CARDS */
+      .doc-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 1rem;
+      }
+      .doc-card {
+        display: block;
+        padding: 1.5rem;
+        background: var(--card2);
+        border: 1px solid var(--border);
+        border-radius: 0.75rem;
+        transition:
+          border-color 0.2s,
+          background 0.2s;
+      }
+      .doc-card:hover {
+        border-color: var(--rust);
+        background: rgba(255, 62, 0, 0.05);
+        text-decoration: none;
+      }
+      .doc-card-title {
+        display: block;
+        font-weight: 700;
+        margin-bottom: 0.35rem;
+        color: var(--text);
+      }
+      .doc-card-desc {
+        font-size: 0.8125rem;
+        color: var(--muted);
+        line-height: 1.55;
+      }
+
+      /* MISC */
+      .divider {
+        border: none;
+        border-top: 1px solid var(--border);
+        margin: 0;
+      }
+      footer {
+        padding: 2.5rem 0;
+        text-align: center;
+        font-size: 0.8125rem;
+        color: var(--muted);
+        border-top: 1px solid var(--border);
+      }
+      footer a {
+        color: var(--muted);
+      }
+      footer a:hover {
+        color: var(--text);
+      }
+
+      @media (max-width: 700px) {
+        .nav-links {
+          display: none;
+        }
         .hero {
-            padding: 8rem 0 6rem;
-            text-align: center;
+          padding: 4rem 0 3rem;
         }
-        h1 {
-            font-size: 3.5rem;
-            margin-bottom: 1.5rem;
-            line-height: 1.1;
+        section {
+          padding: 3.5rem 0;
         }
-        .hero p {
-            font-size: 1.25rem;
-            color: var(--text-muted);
-            max-width: 600px;
-            margin: 0 auto 3rem;
-        }
-        .cta-buttons {
-            display: flex;
-            justify-content: center;
-            gap: 1rem;
-        }
-        .btn {
-            display: inline-block;
-            padding: 0.75rem 1.5rem;
-            border-radius: 0.5rem;
-            font-weight: 600;
-            transition: transform 0.1s, opacity 0.2s;
-        }
-        .btn:hover { transform: translateY(-2px); }
-        .btn-primary {
-            background-color: var(--primary);
-            color: white;
-        }
-        .btn-secondary {
-            background-color: var(--surface);
-            color: var(--text);
-            border: 1px solid rgba(255,255,255,0.1);
-        }
-
-        /* Section Generic */
-        section { padding: 5rem 0; }
-        h2 {
-            font-size: 2.25rem;
-            margin-bottom: 3rem;
-            text-align: center;
-        }
-        h3 {
-            font-size: 1.5rem;
-            margin-bottom: 1rem;
-            color: var(--text);
-        }
-
-        /* Features Grid */
-        .features-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 2rem;
-        }
-        .card {
-            background: var(--surface);
-            padding: 2rem;
-            border-radius: 1rem;
-            border: 1px solid rgba(255,255,255,0.05);
-            transition: transform 0.2s, border-color 0.2s;
-        }
-        .card:hover {
-            transform: translateY(-5px);
-            border-color: rgba(255,255,255,0.1);
-        }
-        .card-icon {
-            font-size: 2rem;
-            margin-bottom: 1.5rem;
-            display: inline-block;
-            padding: 0.75rem;
-            background: rgba(255,255,255,0.05);
-            border-radius: 0.75rem;
-            color: var(--primary);
-        }
-
-        /* Documentation Links */
-        .docs-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 1.5rem;
-        }
-        .doc-link {
-            display: block;
-            background: var(--surface);
-            padding: 1.5rem;
-            border-radius: 0.75rem;
-            border: 1px solid rgba(255,255,255,0.05);
-            text-align: center;
-        }
-        .doc-link:hover {
-            background: rgba(255, 62, 0, 0.1);
-            border-color: var(--primary);
-            color: var(--primary);
-        }
-        .doc-title { font-weight: 700; display: block; margin-bottom: 0.5rem; }
-        .doc-desc { font-size: 0.875rem; color: var(--text-muted); }
-
-        /* Code Block */
-        pre {
-            background: #000;
-            padding: 1.5rem;
-            border-radius: 0.5rem;
-            overflow-x: auto;
-            font-family: var(--font-mono);
-            font-size: 0.9rem;
-            color: #d4d4d4;
-            border: 1px solid rgba(255,255,255,0.1);
-        }
-        .comment { color: #6a9955; }
-        .keyword { color: #569cd6; }
-        .string { color: #ce9178; }
-        .fn { color: #dcdcaa; }
-
-        /* Author Info */
-        .author-section {
-            background: linear-gradient(to bottom, var(--bg), var(--surface));
-            text-align: center;
-        }
-        .avatar {
-            width: 80px;
-            height: 80px;
-            border-radius: 50%;
-            background: var(--primary);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2rem;
-            font-weight: bold;
-            color: white;
-            margin: 0 auto 1.5rem;
-        }
-
-        /* Footer */
-        footer {
-            border-top: 1px solid rgba(255,255,255,0.1);
-            padding: 3rem 0;
-            text-align: center;
-            color: var(--text-muted);
-            margin-top: 3rem;
-        }
-
-        /* Responsive */
-        @media (max-width: 768px) {
-            h1 { font-size: 2.5rem; }
-            .nav-links { display: none; }
-            .hero { padding: 4rem 0; }
-        }
-
-        code {
-            font-family: var(--font-mono);
-            background: rgba(0,0,0,0.3);
-            padding: 0.2rem 0.4rem;
-            border-radius: 4px;
-            font-size: 0.9em;
-            color: #fb923c;
-        }
+      }
     </style>
-</head>
-<body>
-    <header>
-        <div class="container">
-            <nav>
-                <div class="logo">AxumStarter</div>
-                <div class="nav-links">
-                    <a href="#features">Features</a>
-                    <a href="#structure">Structure</a>
-                    <a href="#conventions">Conventions</a>
-                    <a href="#docs">Documentation</a>
-                    <a href="/spec">Swagger API</a>
-                    <a href="https://github.com/thomijasir/axum-starter" target="_blank">GitHub</a>
-                </div>
-            </nav>
+  </head>
+  <body>
+    <nav>
+      <div class="nav-inner">
+        <div class="logo">AxumStarter</div>
+        <div class="nav-links">
+          <a href="#features">Features</a>
+          <a href="#architecture">Architecture</a>
+          <a href="#structure">Structure</a>
+          <a href="#routes">Routes</a>
+          <a href="#docs">Guides</a>
+          <a href="/spec" class="nav-badge">API Docs</a>
         </div>
-    </header>
+      </div>
+    </nav>
 
     <main>
-        <!-- Hero Section -->
-        <section class="hero">
-            <div class="container">
-                <h1>Production Ready<br>Rust API Starter</h1>
+      <!-- HERO -->
+      <section class="hero">
+        <div class="container">
+          <span class="hero-eyebrow">Open Source &middot; MIT License</span>
+          <h1>Production-Ready<br /><span>Rust API</span> Starter</h1>
+          <p class="hero-sub">
+            A clean-architecture foundation built on
+            <strong>Axum 0.8</strong> and <strong>Diesel 2.3</strong>.
+            Authentication, file uploads, OpenAPI docs and structured logging
+            &mdash; all wired up from day one.
+          </p>
+          <div class="chip-row">
+            <span class="chip">Axum 0.8</span>
+            <span class="chip">Diesel 2.3</span>
+            <span class="chip">SQLite / PostgreSQL</span>
+            <span class="chip">JWT + Argon2</span>
+            <span class="chip">utoipa OpenAPI</span>
+            <span class="chip">Tokio async</span>
+            <span class="chip">Tower middleware</span>
+            <span class="chip">tracing</span>
+          </div>
+          <div class="cta-row">
+            <a
+              href="https://github.com/thomijasir/axum-starter"
+              class="btn btn-primary"
+              target="_blank"
+              >View on GitHub</a
+            >
+            <a href="/spec" class="btn btn-ghost">Explore API &rarr;</a>
+          </div>
+        </div>
+      </section>
+
+      <hr class="divider" />
+
+      <!-- FEATURES -->
+      <section id="features">
+        <div class="container">
+          <div class="section-label">Features</div>
+          <h2>Everything you need, nothing you don't</h2>
+          <p class="section-desc">
+            Opinionated defaults with strict layering so the team stays
+            consistent from the first commit.
+          </p>
+          <div class="grid-3">
+            <div class="card">
+              <div class="card-icon">&#9889;</div>
+              <h3>Axum 0.8</h3>
+              <p>
+                Ergonomic, macro-free routing from the Tokio team with Tower
+                middleware composability.
+              </p>
+            </div>
+            <div class="card">
+              <div class="card-icon">&#128451;</div>
+              <h3>Diesel ORM</h3>
+              <p>
+                Type-safe queries with compile-time schema checking. SQLite in
+                dev, PostgreSQL in production, r2d2 pooling throughout.
+              </p>
+            </div>
+            <div class="card">
+              <div class="card-icon">&#128272;</div>
+              <h3>JWT Auth</h3>
+              <p>
+                Access + refresh token rotation, Argon2 password hashing, and a
+                self-contained <code>AuthUser</code> extractor &mdash; no
+                separate middleware needed.
+              </p>
+            </div>
+            <div class="card">
+              <div class="card-icon">&#127959;</div>
+              <h3>Clean Architecture</h3>
+              <p>
+                Strict Controller &rarr; Service &rarr; Repository layering
+                enforced by convention. No HTTP types leak into the service
+                layer.
+              </p>
+            </div>
+            <div class="card">
+              <div class="card-icon">&#128209;</div>
+              <h3>Auto OpenAPI</h3>
+              <p>
+                <code>utoipa</code> generates a full OpenAPI spec from
+                <code>#[utoipa::path]</code> annotations inline with each
+                handler. Swagger UI at <a href="/spec">/spec</a> (dev only).
+              </p>
+            </div>
+            <div class="card">
+              <div class="card-icon">&#128194;</div>
+              <h3>File Uploads</h3>
+              <p>
+                Streaming multipart uploads with MIME allowlist validation,
+                filename sanitisation, and a reusable
+                <code>FormData</code> extractor.
+              </p>
+            </div>
+            <div class="card">
+              <div class="card-icon">&#128203;</div>
+              <h3>Structured Logging</h3>
+              <p>
+                Environment-aware <code>tracing</code> setup: pretty console in
+                dev, JSON to file + stdout in production.
+              </p>
+            </div>
+            <div class="card">
+              <div class="card-icon">&#128260;</div>
+              <h3>Graceful Shutdown</h3>
+              <p>
+                Tower's signal handler + connection drain ensures in-flight
+                requests complete before the process exits.
+              </p>
+            </div>
+            <div class="card">
+              <div class="card-icon">&#129514;</div>
+              <h3>Integration Tests</h3>
+              <p>
+                <code>TestApp::spawn()</code> spins up an isolated SQLite
+                database per test, hitting real HTTP endpoints via
+                <code>reqwest</code>.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <hr class="divider" />
+
+      <!-- ARCHITECTURE -->
+      <section id="architecture" style="background: var(--surface)">
+        <div class="container">
+          <div class="section-label">Architecture</div>
+          <h2>Strict three-layer separation</h2>
+          <p class="section-desc">
+            Each layer has one job. Dependencies flow in one direction &mdash;
+            outer layers call inner ones, never the reverse.
+          </p>
+          <div class="grid-2">
+            <div class="layers">
+              <div class="layer">
+                <div class="layer-header">
+                  <span class="layer-badge badge-ctrl">Controller</span>
+                </div>
+                <h4>HTTP Transport</h4>
                 <p>
-                    A comprehensive starter kit built with <strong>Axum 0.8</strong>, <strong>Diesel</strong>, and <strong>Clean Architecture</strong>. 
-                    Designed to jumpstart your next high-performance web service with best practices built-in.
+                  Parses requests via extractors, calls the service, maps errors
+                  with <code>HttpError::from_service_error()</code>, returns
+                  <code>HttpResponse</code>. No business logic.
                 </p>
-                <div class="cta-buttons">
-                    <a href="https://github.com/thomijasir/axum-starter" class="btn btn-primary">Get Started on GitHub</a>
-                    <a href="/spec" class="btn btn-secondary">Explore API Docs</a>
+              </div>
+              <div class="arrow-down">&#8595; calls</div>
+              <div class="layer">
+                <div class="layer-header">
+                  <span class="layer-badge badge-svc">Service</span>
                 </div>
-            </div>
-        </section>
-
-        <!-- Why This Project -->
-        <section class="container">
-            <div style="text-align: center; max-width: 800px; margin: 0 auto;">
-                <h3>Overview</h3>
-                <p style="color: var(--text-muted);">
-                    We built this starter kit to solve the repetitive setup of Rust web services. 
-                    Instead of wiring up authentication, database pools, and error handling from scratch every time, 
-                    <strong>Axum Starter</strong> provides a solid, opinionated foundation that scales from side-project to production.
+                <h4>Business Logic</h4>
+                <p>
+                  Validates rules, orchestrates repositories. Returns
+                  <code>anyhow::Result&lt;T&gt;</code>. Zero
+                  <code>axum</code> or <code>StatusCode</code> imports allowed.
                 </p>
-            </div>
-        </section>
-
-        <!-- Features -->
-        <section id="features">
-            <div class="container">
-                <h2>Key Features</h2>
-                <div class="features-grid">
-                    <div class="card">
-                        <div class="card-icon">⚡️</div>
-                        <h3>Axum 0.8</h3>
-                        <p>Built on the latest version of the ergonomic and modular web framework from the Tokio team.</p>
-                    </div>
-                    <div class="card">
-                        <div class="card-icon">🗄️</div>
-                        <h3>Diesel ORM</h3>
-                        <p>Type-safe database interactions supporting SQLite (dev) and PostgreSQL (prod) out of the box.</p>
-                    </div>
-                    <div class="card">
-                        <div class="card-icon">🔐</div>
-                        <h3>JWT Auth</h3>
-                        <p>Secure authentication with access/refresh token rotation and argon2 password hashing.</p>
-                    </div>
-                    <div class="card">
-                        <div class="card-icon">🏗️</div>
-                        <h3>Clean Architecture</h3>
-                        <p>Strict separation of concerns: Controller → Service → Repository layers.</p>
-                    </div>
-                    <div class="card">
-                        <div class="card-icon">📑</div>
-                        <h3>Swagger UI</h3>
-                        <p>Auto-generated OpenAPI documentation using <code>utoipa</code>, accessible at <a href="/spec">/spec</a>.</p>
-                    </div>
-                    <div class="card">
-                        <div class="card-icon">📂</div>
-                        <h3>File Uploads</h3>
-                        <p>Built-in support for multipart file uploads with streaming and validation.</p>
-                    </div>
+              </div>
+              <div class="arrow-down">&#8595; calls</div>
+              <div class="layer">
+                <div class="layer-header">
+                  <span class="layer-badge badge-repo">Repository</span>
                 </div>
+                <h4>Data Access</h4>
+                <p>
+                  Only Diesel queries &mdash; no raw SQL. Returns
+                  <code>anyhow::Result&lt;T&gt;</code> with short uppercase
+                  error codes like <code>"NOT_FOUND"</code>.
+                </p>
+              </div>
+              <p
+                style="
+                  font-size: 0.8125rem;
+                  color: var(--muted);
+                  margin-top: 1.25rem;
+                "
+              >
+                <strong style="color: var(--text)">Error flow:</strong>
+                service returns <code>bail!("NOT_FOUND")</code> &rarr;
+                controller maps to <code>404</code> &rarr; client receives
+                <code>{"success":false,"message":"NOT_FOUND"}</code>. New error
+                codes are registered in one place:
+                <code>src/services/http_error.rs</code>.
+              </p>
             </div>
-        </section>
 
-        <!-- Project Structure -->
-        <section id="structure" style="background-color: var(--surface);">
-            <div class="container">
-                <h2>Project Structure</h2>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; align-items: start;">
-                    <div>
-                        <p style="margin-bottom: 1.5rem; color: var(--text-muted);">
-                            The project follows a modular, vertical-slice architecture where features are grouped together.
-                        </p>
-                        <ul style="list-style: none; display: grid; gap: 1rem;">
-                            <li>📂 <strong>src/modules/</strong> - Feature modules (auth, user, attachment)</li>
-                            <li>📂 <strong>src/models/</strong> - Shared domain models</li>
-                            <li>📂 <strong>src/extractors/</strong> - Reusable Axum extractors (AuthUser)</li>
-                            <li>📂 <strong>src/utils/</strong> - Shared utilities (error handling, JWT, encryption)</li>
-                            <li>📂 <strong>src/docs/</strong> - OpenAPI documentation definitions</li>
-                            <li>📂 <strong>guide/</strong> - Detailed project documentation</li>
-                        </ul>
-                    </div>
-                    <pre>
-src/
-├── main.rs              <span class="comment"># Entry point</span>
-├── lib.rs               <span class="comment"># Module declarations</span>
-├── modules/             <span class="comment"># Feature modules</span>
-│   ├── auth/            <span class="comment"># Authentication logic</span>
-│   ├── user/            <span class="comment"># User management</span>
-│   └── attachment/      <span class="comment"># File uploads</span>
-├── extractors/          <span class="comment"># Custom Axum extractors</span>
-├── docs/                <span class="comment"># OpenAPI docs</span>
-└── utils/               <span class="comment"># Shared utilities</span>
-    </pre>
-                </div>
-            </div>
-        </section>
-
-        <!-- Coding Conventions -->
-        <section id="conventions">
-            <div class="container">
-                <h2>Conventions & Architecture</h2>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; align-items: center;">
-                    <pre>
-<span class="comment">// 1. Repository (DB access)</span>
-<span class="keyword">pub async fn</span> <span class="fn">find_by_id</span>(db: &DB, id: String) -> <span class="keyword">anyhow::Result</span><User> {
-    <span class="comment">// Raw Diesel query</span>
+            <div>
+              <pre><span class="t-comment">// repository.rs — data access only</span>
+<span class="t-keyword">pub async fn</span> <span class="t-fn">find_by_id</span>(db: &amp;<span class="t-type">DBSqlite</span>, uid: <span class="t-type">String</span>)
+  -&gt; <span class="t-type">anyhow::Result</span>&lt;<span class="t-type">User</span>&gt;
+{
+  db.<span class="t-fn">execute</span>(|conn| {
+    users::table.<span class="t-fn">find</span>(&amp;uid).<span class="t-fn">first</span>(conn).<span class="t-fn">optional</span>()
+  }).<span class="t-fn">await</span>?
+  .<span class="t-fn">ok_or_else</span>(|| <span class="t-macro">anyhow!</span>(<span class="t-string">"NOT_FOUND"</span>))
 }
 
-<span class="comment">// 2. Service (Business logic)</span>
-<span class="keyword">pub async fn</span> <span class="fn">get_user</span>(db: &DB, id: String) -> <span class="keyword">anyhow::Result</span><User> {
-    repository::<span class="fn">find_by_id</span>(db, id).<span class="fn">await</span>
+<span class="t-comment">// service.rs — business logic only</span>
+<span class="t-keyword">pub async fn</span> <span class="t-fn">get_user</span>(db: &amp;<span class="t-type">DBSqlite</span>, uid: <span class="t-type">String</span>)
+  -&gt; <span class="t-type">anyhow::Result</span>&lt;<span class="t-type">User</span>&gt;
+{
+  repository::<span class="t-fn">find_by_id</span>(db, uid).<span class="t-fn">await</span>
 }
 
-<span class="comment">// 3. Controller (HTTP)</span>
-<span class="keyword">pub async fn</span> <span class="fn">handler</span>(...) -> <span class="keyword">Result</span><impl IntoResponse, HttpError> {
-    service::<span class="fn">get_user</span>(...)
-        .<span class="fn">await</span>
-        .<span class="fn">map_err</span>(HttpError::from_service_error)?
-}
-</pre>
-                    <div>
-                        <h3>Layered Responsibility</h3>
-                        <p style="color: var(--text-muted); margin-bottom: 2rem;">
-                            We strictly separate concerns to ensure maintainability. The <strong>Repository</strong> handles raw data access, 
-                            the <strong>Service</strong> contains business rules and validation, and the <strong>Controller</strong> manages HTTP transport.
-                        </p>
-                        
-                        <h3>Error Handling</h3>
-                        <p style="color: var(--text-muted);">
-                            Errors bubble up as <code>anyhow::Result</code> through the service layer. 
-                            At the controller boundary, they are mapped to structured <code>HttpError</code> responses 
-                            using a centralized mapper, ensuring consistent API error formats.
-                        </p>
-                    </div>
-                </div>
+<span class="t-comment">// controller.rs — HTTP only</span>
+<span class="t-keyword">pub async fn</span> <span class="t-fn">get_by_id</span>(
+  <span class="t-type">State</span>(state): <span class="t-type">State</span>&lt;<span class="t-type">Arc</span>&lt;<span class="t-type">AppState</span>&gt;&gt;,
+  <span class="t-type">PathParam</span>(uid): <span class="t-type">PathParam</span>&lt;<span class="t-type">String</span>&gt;,
+) -&gt; <span class="t-type">Result</span>&lt;<span class="t-keyword">impl</span> <span class="t-type">IntoResponse</span>, <span class="t-type">HttpError</span>&gt; {
+  <span class="t-keyword">let</span> user = service::<span class="t-fn">get_user</span>(&amp;state.db, uid)
+    .<span class="t-fn">await</span>
+    .<span class="t-fn">map_err</span>(<span class="t-type">HttpError</span>::<span class="t-fn">from_service_error</span>)?;
+  <span class="t-type">Ok</span>(<span class="t-type">HttpResponse</span>::<span class="t-fn">ok</span>(user, <span class="t-string">"OK"</span>))
+}</pre>
             </div>
-        </section>
+          </div>
+        </div>
+      </section>
 
-        <!-- Documentation Links -->
-        <section id="docs" style="background-color: rgba(255,255,255,0.02);">
-            <div class="container">
-                <h2>Documentation & Guidelines</h2>
-                <p style="text-align: center; margin-bottom: 3rem; color: var(--text-muted);">
-                    Read the detailed guides to understand the project deeply.
-                </p>
-                
-                <div class="docs-grid">
-                    <a href="https://github.com/thomijasir/axum-starter/blob/main/guide/ARCHITECTURE.md" target="_blank" class="doc-link">
-                        <span class="doc-title">Architecture Guide</span>
-                        <span class="doc-desc">Deep dive into layered architecture, request lifecycle, and data flow.</span>
-                    </a>
-                    
-                    <a href="https://github.com/thomijasir/axum-starter/blob/main/guide/CONVENTIONS.md" target="_blank" class="doc-link">
-                        <span class="doc-title">Coding Conventions</span>
-                        <span class="doc-desc">Naming rules, error handling patterns, and module structure standards.</span>
-                    </a>
-                    
-                    <a href="https://github.com/thomijasir/axum-starter/blob/main/guide/RULES.md" target="_blank" class="doc-link">
-                        <span class="doc-title">Development Rules</span>
-                        <span class="doc-desc">Essential Do's and Don'ts checklist for contributing to this codebase.</span>
-                    </a>
-                </div>
+      <hr class="divider" />
+
+      <!-- STRUCTURE -->
+      <section id="structure">
+        <div class="container">
+          <div class="section-label">Project Structure</div>
+          <h2>Vertical-slice modules</h2>
+          <p class="section-desc">
+            Features live in self-contained directories under
+            <code>src/modules/</code>. Each module owns its model, repository,
+            service, and controller.
+          </p>
+          <div class="grid-2">
+            <pre class="file-tree"><span class="dir">src/</span>
+├── <span class="file">main.rs</span>              <span class="note"># Entry point</span>
+├── <span class="file">lib.rs</span>               <span class="note"># Module declarations</span>
+├── <span class="file">config.rs</span>            <span class="note"># Env loading, logging init</span>
+├── <span class="file">server.rs</span>            <span class="note"># AppServer, middleware, shutdown</span>
+├── <span class="dir">models/</span>              <span class="note"># Shared domain models</span>
+│   └── <span class="file">environment.rs</span>   <span class="note"># Environment, AppState</span>
+├── <span class="dir">modules/</span>             <span class="note"># Feature modules</span>
+│   ├── <span class="file">doc.rs</span>           <span class="note"># ApiDoc aggregator</span>
+│   ├── <span class="dir">health/</span>          <span class="note"># /health/live, /health/ready</span>
+│   ├── <span class="dir">auth/</span>            <span class="note"># register, login, refresh</span>
+│   ├── <span class="dir">user/</span>            <span class="note"># users CRUD</span>
+│   └── <span class="dir">attachment/</span>      <span class="note"># file uploads</span>
+├── <span class="dir">extractors/</span>          <span class="note"># Custom Axum extractors</span>
+│   ├── <span class="file">auth.rs</span>          <span class="note"># AuthUser — JWT validation</span>
+│   ├── <span class="file">body.rs</span>          <span class="note"># BodyJson with validation</span>
+│   ├── <span class="file">path.rs</span>          <span class="note"># PathParam — typed path params</span>
+│   └── <span class="file">formdata.rs</span>      <span class="note"># Multipart + file validation</span>
+├── <span class="dir">services/</span>            <span class="note"># Infrastructure</span>
+│   ├── <span class="file">http_error.rs</span>    <span class="note"># HttpError + error mapper</span>
+│   ├── <span class="file">http_response.rs</span> <span class="note"># HttpResponse wrapper</span>
+│   └── <span class="file">sqlite.rs</span>        <span class="note"># DBSqlite pool wrapper</span>
+├── <span class="dir">schemas/</span>
+│   └── <span class="file">table.rs</span>         <span class="note"># Diesel table! macros</span>
+└── <span class="dir">utils/</span>
+    ├── <span class="file">token.rs</span>         <span class="note"># JWT sign/verify</span>
+    ├── <span class="file">encrypt.rs</span>       <span class="note"># Argon2 hashing</span>
+    ├── <span class="file">files.rs</span>         <span class="note"># Upload/delete helpers</span>
+    └── <span class="file">generator.rs</span>     <span class="note"># Snowflake ID</span></pre>
+
+            <div>
+              <p
+                style="
+                  font-size: 0.875rem;
+                  color: var(--muted);
+                  margin-bottom: 1.25rem;
+                "
+              >
+                Each feature module follows the same internal layout:
+              </p>
+              <pre class="file-tree"><span class="dir">auth/</span>
+├── <span class="file">mod.rs</span>        <span class="note"># Routes — AuthRoutes::build()</span>
+├── <span class="file">model.rs</span>      <span class="note"># RegisterRequest, LoginRequest…</span>
+├── <span class="file">repository.rs</span> <span class="note"># Diesel queries</span>
+├── <span class="file">service.rs</span>    <span class="note"># Business logic</span>
+└── <span class="file">controller.rs</span> <span class="note"># HTTP handlers + utoipa docs</span></pre>
+              <p
+                style="
+                  font-size: 0.875rem;
+                  color: var(--muted);
+                  margin-top: 1.25rem;
+                  margin-bottom: 0.75rem;
+                "
+              >
+                Adding a new module means creating this structure and
+                registering it in <code>src/modules/mod.rs</code>. No
+                framework-level changes needed.
+              </p>
+              <p style="font-size: 0.875rem; color: var(--muted)">
+                Database changes follow standard Diesel migration workflow via
+                <code>./run.sh db:migration:create &lt;name&gt;</code> &mdash;
+                never run <code>diesel</code> or <code>cargo</code> directly, as
+                <code>run.sh</code> handles env loading.
+              </p>
             </div>
-        </section>
+          </div>
+        </div>
+      </section>
+
+      <hr class="divider" />
+
+      <!-- ROUTES -->
+      <section id="routes" style="background: var(--surface)">
+        <div class="container">
+          <div class="section-label">Routing</div>
+          <h2>Available endpoints</h2>
+          <p class="section-desc">
+            Routes follow REST conventions. Resources use plural nouns; action
+            routes use verbs after the prefix.
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Method</th>
+                  <th>Path</th>
+                  <th>Handler</th>
+                  <th>Auth</th>
+                  <th>Description</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><span class="method m-get">GET</span></td>
+                  <td><code>/health/live</code></td>
+                  <td><code>liveness</code></td>
+                  <td>&mdash;</td>
+                  <td>Kubernetes liveness probe</td>
+                </tr>
+                <tr>
+                  <td><span class="method m-get">GET</span></td>
+                  <td><code>/health/ready</code></td>
+                  <td><code>readiness</code></td>
+                  <td>&mdash;</td>
+                  <td>Kubernetes readiness probe</td>
+                </tr>
+                <tr>
+                  <td><span class="method m-post">POST</span></td>
+                  <td><code>/auth/register</code></td>
+                  <td><code>register</code></td>
+                  <td>&mdash;</td>
+                  <td>Create account, returns tokens</td>
+                </tr>
+                <tr>
+                  <td><span class="method m-post">POST</span></td>
+                  <td><code>/auth/login</code></td>
+                  <td><code>login</code></td>
+                  <td>&mdash;</td>
+                  <td>Email + password login</td>
+                </tr>
+                <tr>
+                  <td><span class="method m-post">POST</span></td>
+                  <td><code>/auth/refresh</code></td>
+                  <td><code>refresh</code></td>
+                  <td>&mdash;</td>
+                  <td>Rotate refresh token, issue new access token</td>
+                </tr>
+                <tr>
+                  <td><span class="method m-get">GET</span></td>
+                  <td><code>/users/me</code></td>
+                  <td><code>get_me</code></td>
+                  <td>JWT</td>
+                  <td>Current user profile</td>
+                </tr>
+                <tr>
+                  <td><span class="method m-get">GET</span></td>
+                  <td><code>/users</code></td>
+                  <td><code>list</code></td>
+                  <td>JWT</td>
+                  <td>Paginated user list</td>
+                </tr>
+                <tr>
+                  <td><span class="method m-get">GET</span></td>
+                  <td><code>/users/{id}</code></td>
+                  <td><code>get_by_id</code></td>
+                  <td>JWT</td>
+                  <td>Single user by ID</td>
+                </tr>
+                <tr>
+                  <td><span class="method m-post">POST</span></td>
+                  <td><code>/attachments/upload</code></td>
+                  <td><code>upload</code></td>
+                  <td>JWT</td>
+                  <td>Multipart file upload</td>
+                </tr>
+                <tr>
+                  <td><span class="method m-get">GET</span></td>
+                  <td><code>/attachments</code></td>
+                  <td><code>list</code></td>
+                  <td>JWT</td>
+                  <td>Paginated attachment list</td>
+                </tr>
+                <tr>
+                  <td><span class="method m-get">GET</span></td>
+                  <td><code>/attachments/{id}</code></td>
+                  <td><code>get_by_id</code></td>
+                  <td>JWT</td>
+                  <td>Attachment metadata</td>
+                </tr>
+                <tr>
+                  <td><span class="method m-patch">PATCH</span></td>
+                  <td><code>/attachments/{id}</code></td>
+                  <td><code>update</code></td>
+                  <td>JWT</td>
+                  <td>Update attachment metadata</td>
+                </tr>
+                <tr>
+                  <td><span class="method m-delete">DELETE</span></td>
+                  <td><code>/attachments/{id}</code></td>
+                  <td><code>delete</code></td>
+                  <td>JWT</td>
+                  <td>Delete attachment and file</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <hr class="divider" />
+
+      <!-- CONVENTIONS -->
+      <section id="conventions">
+        <div class="container">
+          <div class="section-label">Conventions</div>
+          <h2>Naming at a glance</h2>
+          <p class="section-desc">
+            Consistent naming makes the codebase predictable and searchable.
+          </p>
+          <div class="grid-2">
+            <div>
+              <p
+                style="
+                  font-size: 0.7rem;
+                  font-weight: 700;
+                  letter-spacing: 0.1em;
+                  text-transform: uppercase;
+                  color: var(--muted);
+                  margin-bottom: 0.75rem;
+                "
+              >
+                Type names
+              </p>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Category</th>
+                      <th>Pattern</th>
+                      <th>Example</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>DB entity</td>
+                      <td><code>{Entity}</code></td>
+                      <td><code>User</code></td>
+                    </tr>
+                    <tr>
+                      <td>Insertable</td>
+                      <td><code>New{Entity}</code></td>
+                      <td><code>NewUser</code></td>
+                    </tr>
+                    <tr>
+                      <td>Response DTO</td>
+                      <td><code>{Entity}Response</code></td>
+                      <td><code>UserResponse</code></td>
+                    </tr>
+                    <tr>
+                      <td>Request DTO</td>
+                      <td><code>{Action}{Entity}Request</code></td>
+                      <td><code>RegisterRequest</code></td>
+                    </tr>
+                    <tr>
+                      <td>Query params</td>
+                      <td><code>{Entity}Query</code></td>
+                      <td><code>UserQuery</code></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div>
+              <p
+                style="
+                  font-size: 0.7rem;
+                  font-weight: 700;
+                  letter-spacing: 0.1em;
+                  text-transform: uppercase;
+                  color: var(--muted);
+                  margin-bottom: 0.75rem;
+                "
+              >
+                Handler names
+              </p>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Operation</th>
+                      <th>Name</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>List resources</td>
+                      <td><code>list</code></td>
+                    </tr>
+                    <tr>
+                      <td>Get single</td>
+                      <td><code>get_by_id</code></td>
+                    </tr>
+                    <tr>
+                      <td>Current user</td>
+                      <td><code>get_me</code></td>
+                    </tr>
+                    <tr>
+                      <td>Create</td>
+                      <td><code>create</code></td>
+                    </tr>
+                    <tr>
+                      <td>Update</td>
+                      <td><code>update</code></td>
+                    </tr>
+                    <tr>
+                      <td>Delete</td>
+                      <td><code>delete</code></td>
+                    </tr>
+                    <tr>
+                      <td>Auth actions</td>
+                      <td>
+                        <code>register</code> / <code>login</code> /
+                        <code>refresh</code>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <hr class="divider" />
+
+      <!-- DOCS -->
+      <section id="docs" style="background: var(--surface)">
+        <div class="container">
+          <div class="section-label">Documentation</div>
+          <h2>Detailed guides</h2>
+          <p class="section-desc">
+            Everything you need to contribute confidently lives in the
+            <code>guide/</code> directory.
+          </p>
+          <div class="doc-cards">
+            <a
+              href="https://github.com/thomijasir/axum-starter/blob/main/guide/ARCHITECTURE.md"
+              target="_blank"
+              class="doc-card"
+            >
+              <span class="doc-card-title">Architecture Guide</span>
+              <span class="doc-card-desc"
+                >Layered architecture, request lifecycle, error flow, database
+                setup, and OpenAPI documentation strategy.</span
+              >
+            </a>
+            <a
+              href="https://github.com/thomijasir/axum-starter/blob/main/guide/CONVENTIONS.md"
+              target="_blank"
+              class="doc-card"
+            >
+              <span class="doc-card-title">Coding Conventions</span>
+              <span class="doc-card-desc"
+                >Naming rules for types, handlers, services and repositories.
+                Route patterns and JSON response format.</span
+              >
+            </a>
+            <a
+              href="https://github.com/thomijasir/axum-starter/blob/main/guide/RULES.md"
+              target="_blank"
+              class="doc-card"
+            >
+              <span class="doc-card-title">Development Rules</span>
+              <span class="doc-card-desc"
+                >Concrete Do's and Don'ts: error handling, layer boundaries,
+                security, workflow, and code quality checklist.</span
+              >
+            </a>
+          </div>
+        </div>
+      </section>
     </main>
 
     <footer>
-        <div class="container">
-            <p>
-                &copy; 2024 Axum Starter Kit. MIT License.<br>
-                <a href="https://github.com/thomijasir/axum-starter" style="color: var(--text-muted); border-bottom: 1px dotted;">View Source on GitHub</a>
-            </p>
-        </div>
+      <div class="container">
+        <p>
+          &copy; 2024 Axum Starter Kit &mdash; MIT License &nbsp;&bull;&nbsp;
+          <a href="https://github.com/thomijasir/axum-starter" target="_blank"
+            >GitHub</a
+          >
+        </p>
+      </div>
     </footer>
-</body>
+  </body>
 </html>

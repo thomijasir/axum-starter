@@ -2,6 +2,9 @@
 db.sqlite
 database.db
 
+# app data
+data/*
+
 # Uploaded files (keep directory structure)
 public/uploads/*
 !public/uploads/.gitkeep

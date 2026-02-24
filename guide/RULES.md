@@ -62,6 +62,18 @@ This document defines the do's and don'ts for working with this codebase.
 - DO validate MIME types against an explicit allowlist in upload handlers
 - DO NOT use client-supplied filenames directly in file paths
 
+### Development Workflow
+
+- DO run the app and all cargo commands through `run.sh` — it loads the correct `.env` file before executing:
+  ```bash
+  ./run.sh dev                # loads .env.local, runs with cargo-watch
+  ./run.sh dev:staging        # loads .env.staging
+  ./run.sh dev:production     # loads .env.production, runs --release
+  ./run.sh build              # cargo build --release
+  ./run.sh lint               # cargo clippy
+  ```
+- DO use `./run.sh db:migration:*` for all Diesel migration commands so the correct `DATABASE_URL` is set
+
 ### Testing
 
 - DO create isolated tests using `TestApp::new()`
@@ -100,6 +112,11 @@ This document defines the do's and don'ts for working with this codebase.
 - DO NOT expose internal error details to clients
 - DO NOT use client-supplied filenames directly in file paths (path traversal)
 - DO NOT accept file uploads without MIME type validation
+
+### Development Workflow
+
+- DO NOT run `cargo run`, `cargo build`, or `cargo watch` directly — use `./run.sh` instead. Running cargo directly skips env file loading, so the app starts without required environment variables (database URL, secrets, etc.)
+- DO NOT run `diesel` CLI commands directly without loading the correct `.env` file first — use `./run.sh db:migration:*`
 
 ### Code Quality
 

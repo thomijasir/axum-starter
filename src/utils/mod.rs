@@ -2,6 +2,7 @@ pub mod encrypt;
 pub mod files;
 pub mod generator;
 pub mod integer;
+pub mod string;
 pub mod token;
 pub mod validation;
 

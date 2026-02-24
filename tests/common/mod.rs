@@ -2,7 +2,6 @@ use axum_starter::{
   models::{AppEnv, AppState, Environment},
   modules::AppRoutes,
   services::DBSqlite,
-  utils::Cache,
 };
 use diesel::RunQueryDsl;
 use std::sync::Arc;
@@ -38,8 +37,7 @@ impl TestApp {
       log_dir: "/tmp".to_string(),
     };
 
-    let cache = Cache::default();
-    let app_state = Arc::new(AppState { env, cache, db });
+    let app_state = Arc::new(AppState { env, db });
 
     let router = AppRoutes::build(app_state.clone());
 

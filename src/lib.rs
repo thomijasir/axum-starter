@@ -1,8 +1,9 @@
+pub mod config;
 pub mod constants;
-pub mod docs;
-pub mod middlewares;
+pub mod extractors;
 pub mod models;
 pub mod modules;
 pub mod schemas;
 pub mod server;
+pub mod services;
 pub mod utils;

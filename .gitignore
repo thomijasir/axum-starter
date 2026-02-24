@@ -1,1 +1,10 @@
 /target
+db.sqlite
+database.db
+
+# app data
+data/*
+!data/.gitkeep
+# Uploaded files (keep directory structure)
+public/uploads/*
+!public/uploads/.gitkeep

@@ -6,4 +6,4 @@ file = "src/schemas/table.rs"
 custom_type_derives = ["diesel::query_builder::QueryId", "Clone"]
 
 [migrations_directory]
-dir = "/Users/venobi/Workspace/axum-boilerplate/migrations"
+dir = "./migrations"

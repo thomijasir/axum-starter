@@ -106,7 +106,10 @@
 use anyhow::Result;
 use diesel::pg::PgConnection;
 use diesel::r2d2::{ConnectionManager, Pool, PooledConnection};
+use diesel_migrations::{EmbeddedMigrations, MigrationHarness, embed_migrations};
 use std::time::Duration;
+
+pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("./migrations");
 
 /// A wrapper around a PostgreSQL connection pool using Diesel and r2d2.
 ///
@@ -177,6 +180,23 @@ impl DBPostgres {
             .test_on_check_out(true)
             .build(manager)?;
         Ok(Self { pool })
+    }
+
+    /// Runs all pending database migrations.
+    ///
+    /// This method should be called once at application startup to ensure
+    /// the database schema is up to date. Migrations are embedded in the
+    /// binary at compile time, so no external files are needed at runtime.
+    ///
+    /// # Returns
+    ///
+    /// Returns `Ok(())` if all pending migrations ran successfully,
+    /// or an error if any migration failed.
+    pub fn run_migrations(&self) -> Result<()> {
+        let mut conn = self.pool.get()?;
+        conn.run_pending_migrations(MIGRATIONS)
+            .map_err(|e| anyhow::anyhow!("Migration failed: {}", e))?;
+        Ok(())
     }
 
     /// Retrieves a pooled database connection.

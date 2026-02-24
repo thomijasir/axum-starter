@@ -34,14 +34,12 @@ where
       .await
       .map_err(|e| HttpError::bad_request(format!("INVALID_BODY_REQUEST|{}", e)))?;
 
-    value
-      .validate()
-      .map_err(|e| {
-        HttpError::bad_request(format!(
-          "INVALID_VALIDATION|{}",
-          format_validation_errors(&e)
-        ))
-      })?;
+    value.validate().map_err(|e| {
+      HttpError::bad_request(format!(
+        "INVALID_VALIDATION|{}",
+        format_validation_errors(&e)
+      ))
+    })?;
 
     Ok(BodyJson(value))
   }

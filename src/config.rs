@@ -43,6 +43,19 @@ pub fn load_environment() -> Environment {
   }
 }
 
+/// Ensures required runtime directories exist, creating them if necessary.
+pub fn ensure_directories(env: &Environment) {
+  let dirs = [env.log_dir.as_str(), "data", "public", "public/uploads"];
+
+  for dir in dirs {
+    if !std::path::Path::new(dir).exists() {
+      std::fs::create_dir_all(dir)
+        .unwrap_or_else(|e| panic!("Failed to create directory '{dir}': {e}"));
+      tracing::info!(dir, "DIRECTORY_CREATED");
+    }
+  }
+}
+
 /// Initialise tracing/logging for the given environment.
 ///
 /// Returns an `Option<WorkerGuard>` that **must be kept alive** for the

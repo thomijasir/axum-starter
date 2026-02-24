@@ -25,6 +25,7 @@ serde_json = "1.0.149"
 uuid = { version = "1.20.0", features = ["v7"] }
 # ORM Database with sqlite
 diesel = { version = "2.3", features = ["r2d2", "sqlite"] }
+diesel_migrations = { version = "2.3", features = ["sqlite"] }
 # ORM Database with postgres
 # diesel = { version = "2.3", features = ["r2d2", "postgres"] }
 r2d2 = "0.8"

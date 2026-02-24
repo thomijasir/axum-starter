@@ -79,7 +79,10 @@
 use anyhow::Result;
 use diesel::r2d2::{ConnectionManager, Pool, PooledConnection};
 use diesel::sqlite::SqliteConnection;
+use diesel_migrations::{EmbeddedMigrations, MigrationHarness, embed_migrations};
 use std::time::Duration;
+
+pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("./migrations");
 
 /// A wrapper around a SQLite connection pool using Diesel and r2d2.
 ///
@@ -107,234 +110,258 @@ use std::time::Duration;
 /// ```
 #[derive(Clone, Debug)]
 pub struct DBSqlite {
-    pool: Pool<ConnectionManager<SqliteConnection>>,
+  pool: Pool<ConnectionManager<SqliteConnection>>,
 }
 
 impl DBSqlite {
-    /// Creates a new database connection pool from the given URL.
-    ///
-    /// The URL should be a valid SQLite connection string, such as:
-    /// - `"sqlite://database.db"` - relative path
-    /// - `"sqlite:///absolute/path/to/database.db"` - absolute path
-    /// - `":memory:"` - in-memory database
-    ///
-    /// # Arguments
-    ///
-    /// * `database_url` - A SQLite connection string
-    ///
-    /// # Returns
-    ///
-    /// Returns `Ok(Self)` with the configured pool, or a `PoolError` if the pool
-    /// could not be created.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use axum_starter::services::DBSqlite;
-    ///
-    /// // Create pool with file database
-    /// let db = DBSqlite::new("sqlite://database.db")?;
-    ///
-    /// // Create pool with in-memory database
-    /// let db = DBSqlite::new(":memory:")?;
-    /// # Ok::<_, diesel::r2d2::PoolError>(())
-    /// ```
-    pub fn new(database_url: &str) -> Result<Self, diesel::r2d2::PoolError> {
-        let manager = ConnectionManager::<SqliteConnection>::new(database_url);
-        let pool = Pool::builder()
-            .connection_timeout(Duration::from_secs(60))
-            .max_size(32)
-            .min_idle(Some(8))
-            .idle_timeout(Some(Duration::from_secs(600)))
-            .max_lifetime(Some(Duration::from_secs(3600)))
-            .test_on_check_out(true)
-            .build(manager)?;
-        Ok(Self { pool })
-    }
+  /// Creates a new database connection pool from the given URL.
+  ///
+  /// The URL should be a valid SQLite connection string, such as:
+  /// - `"sqlite://database.db"` - relative path
+  /// - `"sqlite:///absolute/path/to/database.db"` - absolute path
+  /// - `":memory:"` - in-memory database
+  ///
+  /// # Arguments
+  ///
+  /// * `database_url` - A SQLite connection string
+  ///
+  /// # Returns
+  ///
+  /// Returns `Ok(Self)` with the configured pool, or a `PoolError` if the pool
+  /// could not be created.
+  ///
+  /// # Example
+  ///
+  /// ```rust
+  /// use axum_starter::services::DBSqlite;
+  ///
+  /// // Create pool with file database
+  /// let db = DBSqlite::new("sqlite://database.db")?;
+  ///
+  /// // Create pool with in-memory database
+  /// let db = DBSqlite::new(":memory:")?;
+  /// # Ok::<_, diesel::r2d2::PoolError>(())
+  /// ```
+  pub fn new(database_url: &str) -> Result<Self, diesel::r2d2::PoolError> {
+    let manager = ConnectionManager::<SqliteConnection>::new(database_url);
+    let pool = Pool::builder()
+      .connection_timeout(Duration::from_secs(60))
+      .max_size(32)
+      .min_idle(Some(8))
+      .idle_timeout(Some(Duration::from_secs(600)))
+      .max_lifetime(Some(Duration::from_secs(3600)))
+      .test_on_check_out(true)
+      .build(manager)?;
+    Ok(Self { pool })
+  }
 
-    /// Retrieves a pooled database connection.
-    ///
-    /// This method blocks until a connection is available or the connection
-    /// timeout is reached.
-    ///
-    /// # Returns
-    ///
-    /// Returns a `PooledConnection` on success, or a `PoolError` if:
-    /// - The pool has reached its maximum size and timeout elapsed
-    /// - The connection could not be established
-    ///
-    /// # Example
-    ///
-    /// ```rust,no_run
-    /// use axum_starter::services::DBSqlite;
-    /// use diesel::RunQueryDsl;
-    /// use diesel::sql_query;
-    ///
-    /// let db = DBSqlite::new("sqlite://database.db")?;
-    /// let conn = db.get_connection()?;
-    /// // Use the connection for synchronous operations
-    /// # Ok::<_, anyhow::Error>(())
-    /// ```
-    pub fn get_connection(
-        &self,
-    ) -> Result<PooledConnection<ConnectionManager<SqliteConnection>>, diesel::r2d2::PoolError>
-    {
-        self.pool.get()
-    }
+  /// Runs all pending database migrations.
+  ///
+  /// This method should be called once at application startup to ensure
+  /// the database schema is up to date. Migrations are embedded in the
+  /// binary at compile time, so no external files are needed at runtime.
+  ///
+  /// # Returns
+  ///
+  /// Returns `Ok(())` if all pending migrations ran successfully,
+  /// or an error if any migration failed.
+  pub fn run_migrations(&self) -> Result<()> {
+    let mut conn = self.pool.get()?;
+    conn
+      .run_pending_migrations(MIGRATIONS)
+      .map_err(|e| anyhow::anyhow!("Migration failed: {}", e))?;
+    Ok(())
+  }
 
-    /// Executes a write operation within a database transaction.
-    ///
-    /// This method wraps the operation in a transaction context. If the
-    /// operation returns an error, the transaction is rolled back automatically.
-    /// The operation runs in a blocking thread pool to avoid blocking the
-    /// async runtime.
-    ///
-    /// # Arguments
-    ///
-    /// * `operation` - A closure that takes a mutable reference to a `SqliteConnection`
-    ///   and returns a `Result`. Use this for INSERT, UPDATE, DELETE operations.
-    ///
-    /// # Returns
-    ///
-    /// Returns the result of the operation, or an error if:
-    /// - The connection could not be acquired
-    /// - The operation failed
-    ///
-    /// # Example
-    ///
-    /// ```rust,no_run
-    /// use axum_starter::services::DBSqlite;
-    /// use anyhow::Result;
-    /// use diesel::sql_query;
-    /// use diesel::RunQueryDsl;
-    ///
-    /// async fn create_user(db: &DBSqlite, name: String) -> Result<()> {
-    ///     db.transaction(move |conn| {
-    ///         sql_query("INSERT INTO users (name) VALUES (?)")
-    ///             .bind::<diesel::sql_types::Text, _>(name)
-    ///             .execute(conn)?;
-    ///         Ok(())
-    ///     }).await
-    /// }
-    /// ```
-    pub async fn transaction<F, T>(&self, operation: F) -> Result<T>
-    where
-        F: FnOnce(&mut SqliteConnection) -> Result<T> + Send + 'static,
-        T: Send + 'static,
-    {
-        let pool = self.pool.clone();
-        tokio::task::spawn_blocking(move || {
-            let mut conn = pool.get()?;
-            operation(&mut conn)
-        })
-        .await?
-    }
+  /// Retrieves a pooled database connection.
+  ///
+  /// This method blocks until a connection is available or the connection
+  /// timeout is reached.
+  ///
+  /// # Returns
+  ///
+  /// Returns a `PooledConnection` on success, or a `PoolError` if:
+  /// - The pool has reached its maximum size and timeout elapsed
+  /// - The connection could not be established
+  ///
+  /// # Example
+  ///
+  /// ```rust,no_run
+  /// use axum_starter::services::DBSqlite;
+  /// use diesel::RunQueryDsl;
+  /// use diesel::sql_query;
+  ///
+  /// let db = DBSqlite::new("sqlite://database.db")?;
+  /// let conn = db.get_connection()?;
+  /// // Use the connection for synchronous operations
+  /// # Ok::<_, anyhow::Error>(())
+  /// ```
+  pub fn get_connection(
+    &self
+  ) -> Result<PooledConnection<ConnectionManager<SqliteConnection>>, diesel::r2d2::PoolError> {
+    self.pool.get()
+  }
 
-    /// Executes a read-only operation using a pooled connection.
-    ///
-    /// This method is optimized for SELECT/GET queries as it does not incur
-    /// the overhead of transaction management. The operation runs in a
-    /// blocking thread pool to avoid blocking the async runtime.
-    ///
-    /// # Arguments
-    ///
-    /// * `operation` - A closure that takes a mutable reference to a `SqliteConnection`
-    ///   and returns a `Result`. Use this for SELECT queries.
-    ///
-    /// # Returns
-    ///
-    /// Returns the result of the operation, or an error if:
-    /// - The connection could not be acquired
-    /// - The operation failed
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use axum_starter::services::DBSqlite;
-    /// use anyhow::Result;
-    /// use diesel::sql_query;
-    /// use diesel::RunQueryDsl;
-    /// use diesel::QueryableByName;
-    ///
-    /// #[derive(QueryableByName)]
-    /// struct UserCount {
-    ///     #[diesel(sql_type = diesel::sql_types::BigInt)]
-    ///     count: i64,
-    /// }
-    ///
-    /// async fn count_users(db: &DBSqlite) -> Result<i64> {
-    ///     let result: UserCount = db.execute(|conn| {
-    ///         sql_query("SELECT COUNT(*) as count FROM users")
-    ///             .get_result(conn)
-    ///             .map_err(|e| anyhow::anyhow!("Query failed: {}", e))
-    ///     }).await?;
-    ///     Ok(result.count)
-    /// }
-    /// ```
-    pub async fn execute<F, T>(&self, operation: F) -> Result<T>
-    where
-        F: FnOnce(&mut SqliteConnection) -> Result<T> + Send + 'static,
-        T: Send + 'static,
-    {
-        let pool = self.pool.clone();
-        tokio::task::spawn_blocking(move || {
-            let mut conn = pool.get()?;
-            operation(&mut conn)
-        })
-        .await?
-    }
+  /// Executes a write operation within a database transaction.
+  ///
+  /// This method wraps the operation in a transaction context. If the
+  /// operation returns an error, the transaction is rolled back automatically.
+  /// The operation runs in a blocking thread pool to avoid blocking the
+  /// async runtime.
+  ///
+  /// # Arguments
+  ///
+  /// * `operation` - A closure that takes a mutable reference to a `SqliteConnection`
+  ///   and returns a `Result`. Use this for INSERT, UPDATE, DELETE operations.
+  ///
+  /// # Returns
+  ///
+  /// Returns the result of the operation, or an error if:
+  /// - The connection could not be acquired
+  /// - The operation failed
+  ///
+  /// # Example
+  ///
+  /// ```rust,no_run
+  /// use axum_starter::services::DBSqlite;
+  /// use anyhow::Result;
+  /// use diesel::sql_query;
+  /// use diesel::RunQueryDsl;
+  ///
+  /// async fn create_user(db: &DBSqlite, name: String) -> Result<()> {
+  ///     db.transaction(move |conn| {
+  ///         sql_query("INSERT INTO users (name) VALUES (?)")
+  ///             .bind::<diesel::sql_types::Text, _>(name)
+  ///             .execute(conn)?;
+  ///         Ok(())
+  ///     }).await
+  /// }
+  /// ```
+  pub async fn transaction<F, T>(
+    &self,
+    operation: F,
+  ) -> Result<T>
+  where
+    F: FnOnce(&mut SqliteConnection) -> Result<T> + Send + 'static,
+    T: Send + 'static,
+  {
+    let pool = self.pool.clone();
+    tokio::task::spawn_blocking(move || {
+      let mut conn = pool.get()?;
+      operation(&mut conn)
+    })
+    .await?
+  }
 
-    /// Runs a health check query to verify database connectivity.
-    ///
-    /// Executes `SELECT 1` against the database to ensure the connection
-    /// is active and responsive.
-    ///
-    /// # Returns
-    ///
-    /// Returns `Ok(())` if the health check succeeds, or an error if:
-    /// - The connection could not be acquired
-    /// - The query failed
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use axum_starter::services::DBSqlite;
-    ///
-    /// async fn check_database_health(db: &DBSqlite) -> bool {
-    ///     db.health_check().await.is_ok()
-    /// }
-    /// ```
-    pub async fn health_check(&self) -> Result<()> {
-        use diesel::RunQueryDsl;
-        use diesel::sql_query;
+  /// Executes a read-only operation using a pooled connection.
+  ///
+  /// This method is optimized for SELECT/GET queries as it does not incur
+  /// the overhead of transaction management. The operation runs in a
+  /// blocking thread pool to avoid blocking the async runtime.
+  ///
+  /// # Arguments
+  ///
+  /// * `operation` - A closure that takes a mutable reference to a `SqliteConnection`
+  ///   and returns a `Result`. Use this for SELECT queries.
+  ///
+  /// # Returns
+  ///
+  /// Returns the result of the operation, or an error if:
+  /// - The connection could not be acquired
+  /// - The operation failed
+  ///
+  /// # Example
+  ///
+  /// ```rust
+  /// use axum_starter::services::DBSqlite;
+  /// use anyhow::Result;
+  /// use diesel::sql_query;
+  /// use diesel::RunQueryDsl;
+  /// use diesel::QueryableByName;
+  ///
+  /// #[derive(QueryableByName)]
+  /// struct UserCount {
+  ///     #[diesel(sql_type = diesel::sql_types::BigInt)]
+  ///     count: i64,
+  /// }
+  ///
+  /// async fn count_users(db: &DBSqlite) -> Result<i64> {
+  ///     let result: UserCount = db.execute(|conn| {
+  ///         sql_query("SELECT COUNT(*) as count FROM users")
+  ///             .get_result(conn)
+  ///             .map_err(|e| anyhow::anyhow!("Query failed: {}", e))
+  ///     }).await?;
+  ///     Ok(result.count)
+  /// }
+  /// ```
+  pub async fn execute<F, T>(
+    &self,
+    operation: F,
+  ) -> Result<T>
+  where
+    F: FnOnce(&mut SqliteConnection) -> Result<T> + Send + 'static,
+    T: Send + 'static,
+  {
+    let pool = self.pool.clone();
+    tokio::task::spawn_blocking(move || {
+      let mut conn = pool.get()?;
+      operation(&mut conn)
+    })
+    .await?
+  }
 
-        self.execute(|conn| {
-            sql_query("SELECT 1").execute(conn)?;
-            Ok(())
-        })
-        .await
-    }
+  /// Runs a health check query to verify database connectivity.
+  ///
+  /// Executes `SELECT 1` against the database to ensure the connection
+  /// is active and responsive.
+  ///
+  /// # Returns
+  ///
+  /// Returns `Ok(())` if the health check succeeds, or an error if:
+  /// - The connection could not be acquired
+  /// - The query failed
+  ///
+  /// # Example
+  ///
+  /// ```rust
+  /// use axum_starter::services::DBSqlite;
+  ///
+  /// async fn check_database_health(db: &DBSqlite) -> bool {
+  ///     db.health_check().await.is_ok()
+  /// }
+  /// ```
+  pub async fn health_check(&self) -> Result<()> {
+    use diesel::RunQueryDsl;
+    use diesel::sql_query;
 
-    /// Retrieves statistics about the current state of the connection pool.
-    ///
-    /// # Returns
-    ///
-    /// Returns a tuple `(total_connections, idle_connections)`:
-    /// - `total_connections` - The total number of connections in the pool
-    /// - `idle_connections` - The number of currently idle connections
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use axum_starter::services::DBSqlite;
-    ///
-    /// let db = DBSqlite::new("sqlite://database.db")?;
-    /// let (total, idle) = db.pool_stats();
-    /// println!("Total: {}, Idle: {}", total, idle);
-    /// # Ok::<_, diesel::r2d2::PoolError>(())
-    /// ```
-    pub fn pool_stats(&self) -> (u32, u32) {
-        let state = self.pool.state();
-        (state.connections, state.idle_connections)
-    }
+    self
+      .execute(|conn| {
+        sql_query("SELECT 1").execute(conn)?;
+        Ok(())
+      })
+      .await
+  }
+
+  /// Retrieves statistics about the current state of the connection pool.
+  ///
+  /// # Returns
+  ///
+  /// Returns a tuple `(total_connections, idle_connections)`:
+  /// - `total_connections` - The total number of connections in the pool
+  /// - `idle_connections` - The number of currently idle connections
+  ///
+  /// # Example
+  ///
+  /// ```rust
+  /// use axum_starter::services::DBSqlite;
+  ///
+  /// let db = DBSqlite::new("sqlite://database.db")?;
+  /// let (total, idle) = db.pool_stats();
+  /// println!("Total: {}, Idle: {}", total, idle);
+  /// # Ok::<_, diesel::r2d2::PoolError>(())
+  /// ```
+  pub fn pool_stats(&self) -> (u32, u32) {
+    let state = self.pool.state();
+    (state.connections, state.idle_connections)
+  }
 }

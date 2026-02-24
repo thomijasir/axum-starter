@@ -1,6 +1,5 @@
 /// Convert u8/u16/u32/u64 to i64, saturating on overflow.
 /// u8/u16/u32 always fit; u64 values above i64::MAX become i64::MAX.
-
 pub fn to_i64<T>(n: T) -> i64
 where
   // Needed so we can lift to a wide, unsigned type first

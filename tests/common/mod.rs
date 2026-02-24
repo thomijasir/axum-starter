@@ -114,7 +114,11 @@ impl TestApp {
   }
 
   /// Helper: POST /auth/login and return the response
-  pub async fn login(&self, email: &str, password: &str) -> reqwest::Response {
+  pub async fn login(
+    &self,
+    email: &str,
+    password: &str,
+  ) -> reqwest::Response {
     self
       .client
       .post(format!("{}/auth/login", self.address))

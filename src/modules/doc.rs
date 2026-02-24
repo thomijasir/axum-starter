@@ -14,8 +14,8 @@ use crate::{
 use axum::Router;
 use std::sync::Arc;
 use utoipa::{
-  openapi::security::{HttpAuthScheme, HttpBuilder, SecurityScheme},
   OpenApi,
+  openapi::security::{HttpAuthScheme, HttpBuilder, SecurityScheme},
 };
 use utoipa_swagger_ui::SwaggerUi;
 

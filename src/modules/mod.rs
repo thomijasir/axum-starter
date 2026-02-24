@@ -4,8 +4,7 @@ pub mod doc;
 pub mod health;
 pub mod user;
 
-use crate::{models::AppState};
-use doc::swagger_router;
+use crate::models::AppState;
 use attachment::AttachmentRoutes;
 use auth::AuthRoutes;
 use axum::{
@@ -14,6 +13,7 @@ use axum::{
   response::{IntoResponse, Response},
   routing::get,
 };
+use doc::swagger_router;
 use health::HealthRoutes;
 use std::sync::Arc;
 use user::UserRoutes;

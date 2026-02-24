@@ -38,7 +38,10 @@ pub async fn register(
   username: String,
   password: String,
 ) -> Result<(User, RefreshToken)> {
-  if user_service::find_by_email(db, &user_email).await?.is_some() {
+  if user_service::find_by_email(db, &user_email)
+    .await?
+    .is_some()
+  {
     bail!("EMAIL_ALREADY_EXISTS");
   }
 

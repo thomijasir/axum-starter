@@ -82,13 +82,13 @@ impl MultipartFile {
       )));
     }
 
-    if let Some(allowed) = &config.allowed_mime_types {
-      if !allowed.contains(&self.content_type) {
-        return Err(HttpError::bad_request(format!(
-          "INVALID_FILE_TYPE|allowed={}",
-          allowed.join(", ")
-        )));
-      }
+    if let Some(allowed) = &config.allowed_mime_types
+      && !allowed.contains(&self.content_type)
+    {
+      return Err(HttpError::bad_request(format!(
+        "INVALID_FILE_TYPE|allowed={}",
+        allowed.join(", ")
+      )));
     }
 
     Ok(())

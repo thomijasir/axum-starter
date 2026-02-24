@@ -1,9 +1,9 @@
 use serde::{Deserialize, Serialize};
-use utoipa::ToSchema;
+use utoipa::{IntoParams, ToSchema};
 
 #[derive(Debug, Clone, Serialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
-pub struct PaginatedResponse<T> {
+pub struct PaginatedResponse<T: ToSchema> {
   pub page: u32,
   pub per_page: u32,
   pub total_items: u32,
@@ -11,7 +11,7 @@ pub struct PaginatedResponse<T> {
   pub items: Vec<T>,
 }
 
-impl<T> PaginatedResponse<T> {
+impl<T: ToSchema> PaginatedResponse<T> {
   pub fn new(
     items: Vec<T>,
     page: u32,
@@ -21,7 +21,7 @@ impl<T> PaginatedResponse<T> {
     let total_pages = if per_page == 0 {
       1
     } else {
-      (total_items + per_page - 1) / per_page
+      total_items.div_ceil(per_page)
     };
     Self {
       page,
@@ -37,20 +37,13 @@ impl<T> PaginatedResponse<T> {
 ///
 /// Usage: `Query<PaginationQuery>` in handler parameters.
 /// Defaults to page 1, limit 20; limit is capped at 100.
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, IntoParams)]
+#[serde(rename_all = "camelCase")]
 pub struct PaginationQuery {
-  #[serde(default = "default_page")]
+  #[param(default = 1)]
   pub page: u32,
-  #[serde(default = "default_limit")]
+  #[param(default = 10, maximum = 100)]
   pub limit: u32,
-}
-
-fn default_page() -> u32 {
-  1
-}
-
-fn default_limit() -> u32 {
-  10
 }
 
 impl PaginationQuery {

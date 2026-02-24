@@ -5,5 +5,5 @@ pub mod path;
 
 pub use auth::AuthUser;
 pub use body::BodyJson;
-pub use formdata::{FileValidationConfig, MultipartForm, MultipartFormWithConfig, MultipartFile};
+pub use formdata::{FileValidationConfig, MultipartFile, MultipartForm, MultipartFormWithConfig};
 pub use path::PathParam;

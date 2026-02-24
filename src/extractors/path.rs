@@ -1,6 +1,6 @@
 use crate::services::HttpError;
 use axum::{
-  extract::{Path, rejection::PathRejection, FromRequestParts},
+  extract::{FromRequestParts, Path, rejection::PathRejection},
   http::request::Parts,
 };
 use serde::de::DeserializeOwned;
@@ -34,7 +34,10 @@ where
 {
   type Rejection = HttpError;
 
-  async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Self::Rejection> {
+  async fn from_request_parts(
+    parts: &mut Parts,
+    state: &S,
+  ) -> Result<Self, Self::Rejection> {
     Path::<T>::from_request_parts(parts, state)
       .await
       .map(|Path(value)| PathParam(value))
@@ -51,7 +54,12 @@ where
 #[cfg(test)]
 mod tests {
   use super::*;
-  use axum::{Router, body::Body, http::{Request, StatusCode}, routing::get};
+  use axum::{
+    Router,
+    body::Body,
+    http::{Request, StatusCode},
+    routing::get,
+  };
   use tower::ServiceExt;
 
   async fn handler_i32(PathParam(id): PathParam<i32>) -> StatusCode {
@@ -66,7 +74,12 @@ mod tests {
   #[tokio::test]
   async fn valid_integer_path_param() {
     let response = test_app()
-      .oneshot(Request::builder().uri("/items/42").body(Body::empty()).unwrap())
+      .oneshot(
+        Request::builder()
+          .uri("/items/42")
+          .body(Body::empty())
+          .unwrap(),
+      )
       .await
       .unwrap();
     assert_eq!(response.status(), StatusCode::OK);
@@ -75,7 +88,12 @@ mod tests {
   #[tokio::test]
   async fn invalid_path_param_returns_bad_request() {
     let response = test_app()
-      .oneshot(Request::builder().uri("/items/not-a-number").body(Body::empty()).unwrap())
+      .oneshot(
+        Request::builder()
+          .uri("/items/not-a-number")
+          .body(Body::empty())
+          .unwrap(),
+      )
       .await
       .unwrap();
     assert_eq!(response.status(), StatusCode::BAD_REQUEST);

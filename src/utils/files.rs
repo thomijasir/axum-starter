@@ -72,8 +72,7 @@ pub async fn delete_file<P: AsRef<Path>>(file_path: P) -> Result<()> {
         current = dir.parent();
       }
       Err(e)
-        if e.kind() == ErrorKind::DirectoryNotEmpty
-          || e.kind() == ErrorKind::PermissionDenied =>
+        if e.kind() == ErrorKind::DirectoryNotEmpty || e.kind() == ErrorKind::PermissionDenied =>
       {
         break;
       }

@@ -1,24 +1,29 @@
-
-FROM rust:1.83 as builder
-
+FROM rust:latest AS builder
 WORKDIR /app
+
+# Cache dependencies
+COPY Cargo.toml Cargo.lock ./
+RUN mkdir src && echo "fn main() {}" > src/main.rs && cargo build --release && rm -rf src
+
+# Build real application
 COPY . .
-# Build the binary
-RUN apt-get update && apt-get install -y pkg-config libssl-dev libpq-dev libsqlite3-dev && cargo build --release
+RUN touch src/main.rs && cargo build --release
 
 FROM debian:bookworm-slim
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends openssl libpq5 libsqlite3-0 ca-certificates \
+    && apt-get clean && rm -rf /var/lib/apt/lists/* \
+    && groupadd -r appuser && useradd -r -g appuser -d /app appuser
 
 WORKDIR /app
-# Copy the binary from the builder stage
-COPY --from=builder /app/target/release/axum-starter /app/api
-# Install necessary runtime dependencies
-RUN apt-get update && apt install -y openssl libpq5
-# Add execute permissions to the binary
-RUN chmod +x /app/api
-# Create a volume for the public directory
-RUN mkdir -p /app/public
-# Clean up
-RUN apt-get clean && rm -rf /var/lib/apt/lists/*
+COPY --from=builder /app/target/release/axum-starter ./api
+COPY --from=builder /app/public ./public
+
+RUN mkdir -p /app/data/logs /app/public/uploads \
+    && chown -R appuser:appuser /app
+
+USER appuser
 
 EXPOSE 3099
+VOLUME ["/app/data", "/app/public"]
 CMD ["./api"]

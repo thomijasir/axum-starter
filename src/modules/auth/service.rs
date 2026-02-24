@@ -1,5 +1,5 @@
 use super::{
-  model::{AuthTokens, NewRefreshToken, RefreshToken},
+  model::{AuthTokensResponse, NewRefreshToken, RefreshToken},
   repository,
 };
 use crate::{
@@ -38,27 +38,24 @@ pub async fn register(
   username: String,
   password: String,
 ) -> Result<(User, RefreshToken)> {
-  if user_service::find_by_email(db, user_email.clone())
-    .await?
-    .is_some()
-  {
+  if user_service::find_by_email(db, &user_email).await?.is_some() {
     bail!("EMAIL_ALREADY_EXISTS");
   }
 
   let hashed = encrypt::hash(&password).map_err(|_| anyhow!("PASSWORD_HASH_FAILED"))?;
 
-  let now = Utc::now().to_rfc3339();
+  let now = Utc::now();
   let new_user = NewUser {
     id: generate_id().to_string(),
     email: user_email,
     username,
     password: hashed,
-    created_at: now.clone(),
-    updated_at: now,
+    created_at: now.to_rfc3339(),
+    updated_at: now.to_rfc3339(),
   };
 
   let user = user_service::create(db, new_user).await?;
-  let refresh = repository::insert_token(db, new_refresh_token_record(&user.id)).await?;
+  let refresh = repository::insert(db, new_refresh_token_record(&user.id)).await?;
 
   Ok((user, refresh))
 }
@@ -69,7 +66,7 @@ pub async fn login(
   user_email: String,
   password: String,
 ) -> Result<(User, RefreshToken)> {
-  let user = user_service::find_by_email(db, user_email)
+  let user = user_service::find_by_email(db, &user_email)
     .await?
     .ok_or_else(|| anyhow!("INVALID_CREDENTIALS"))?;
 
@@ -80,7 +77,7 @@ pub async fn login(
     bail!("INVALID_CREDENTIALS");
   }
 
-  let refresh = repository::insert_token(db, new_refresh_token_record(&user.id)).await?;
+  let refresh = repository::insert(db, new_refresh_token_record(&user.id)).await?;
 
   Ok((user, refresh))
 }
@@ -90,7 +87,7 @@ pub async fn refresh(
   db: &DBSqlite,
   incoming_token: String,
 ) -> Result<RefreshToken> {
-  let existing = repository::find_token(db, incoming_token)
+  let existing = repository::find_by_token(db, incoming_token)
     .await?
     .ok_or_else(|| anyhow!("INVALID_REFRESH_TOKEN"))?;
 
@@ -101,19 +98,19 @@ pub async fn refresh(
     bail!("REFRESH_TOKEN_EXPIRED");
   }
 
-  repository::rotate_token(db, existing.id, new_refresh_token_record(&existing.user_id)).await
+  repository::rotate(db, existing.id, new_refresh_token_record(&existing.user_id)).await
 }
 
-/// Build the `AuthTokens` response payload from a User + RefreshToken.
+/// Build the `AuthTokensResponse` payload from a User + RefreshToken.
 pub fn build_tokens(
   user: &User,
   refresh_token: &RefreshToken,
   secret: &[u8],
-) -> Result<AuthTokens> {
+) -> Result<AuthTokensResponse> {
   let access_token = create_token(format!("{}|{}", user.id, user.email), secret)
     .map_err(|_| anyhow!("TOKEN_CREATE_FAILED"))?;
 
-  Ok(AuthTokens {
+  Ok(AuthTokensResponse {
     access_token,
     refresh_token: refresh_token.token.clone(),
     expires_in: ACCESS_TOKEN_EXPIRES_IN,

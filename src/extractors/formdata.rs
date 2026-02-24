@@ -1,4 +1,4 @@
-use crate::utils::HttpError;
+use crate::{services::HttpError, utils::validation::format_validation_errors};
 use axum::{
   body::{Body, Bytes},
   extract::{FromRequest, Multipart, Request},
@@ -108,49 +108,6 @@ impl<T> Deref for MultipartForm<T> {
   }
 }
 
-fn format_validation_errors(errors: &ValidationErrors) -> String {
-  let map_error = errors
-    .field_errors()
-    .iter()
-    .map(|(field, errors)| {
-      let formatted: Vec<String> = errors
-        .iter()
-        .map(|e| {
-          let mut parts: Vec<String> = Vec::new();
-          parts.push(e.code.to_string());
-
-          if let Some(msg) = &e.message {
-            parts.push(msg.to_string());
-          }
-
-          if let Some(v) = e.params.get("value") {
-            parts.push(format!("value={v}"));
-          }
-
-          for (k, v) in e.params.iter().filter(|(k, _)| **k != "value") {
-            parts.push(format!("{k}={v}"));
-          }
-
-          parts.join("|")
-        })
-        .collect();
-
-      if formatted.is_empty() {
-        format!("{field}|Invalid value")
-      } else {
-        format!("{field}|{}", formatted.join(", "))
-      }
-    })
-    .collect::<Vec<String>>()
-    .join(";");
-
-  if map_error.is_empty() {
-    errors.to_string()
-  } else {
-    map_error
-  }
-}
-
 impl<S, T> FromRequest<S> for MultipartForm<T>
 where
   S: Send + Sync,
@@ -236,7 +193,7 @@ where
   )
   .map_err(|e| HttpError::bad_request(format!("INVALID_FIELD_FORMAT|{}", e)))?;
 
-  fields.validate().map_err(|e| {
+  fields.validate().map_err(|e: ValidationErrors| {
     HttpError::bad_request(format!(
       "INVALID_VALIDATION|{}",
       format_validation_errors(&e)

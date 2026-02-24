@@ -5,17 +5,8 @@ use axum_starter::{
   models::{AppEnv, AppState},
   server::AppServer,
   services::DBSqlite,
-  utils::Cache,
 };
 
-// TODO
-// [Done] camelcase response
-// [Done] pagination
-// [Not started] implement custom extractor handle for multipart
-// Bug
-// [Done] Production log not insight full
-// [] Documentation still not perfect
-// [] Docker not tested yet
 #[tokio::main]
 async fn main() {
   // Load Environment (also loads .env file)
@@ -50,12 +41,10 @@ async fn main() {
   // Log Server information
   tracing::info!(mode = %env.mode, port = env.port, "SERVER_START");
 
-  // Create in-memory cache
-  let cache = Cache::default();
   // Create DB connection pool
   let db = DBSqlite::new(&env.database_url).expect("DATABASE_POOL_FAILURE");
   // Create App State
-  let app_state = Arc::new(AppState { env, cache, db });
+  let app_state = Arc::new(AppState { env, db });
 
   AppServer::serve(app_state)
     .await

@@ -5,8 +5,8 @@ use super::{
 use crate::{
   extractors::BodyJson,
   models::AppState,
-  modules::auth::model::AuthTokens,
-  utils::{HttpError, HttpResponse},
+  modules::auth::model::AuthTokensResponse,
+  services::{HttpError, HttpResponse},
 };
 use axum::{extract::State, response::IntoResponse};
 use std::sync::Arc;
@@ -17,7 +17,7 @@ use std::sync::Arc;
     tag = "auth",
     request_body = RegisterRequest,
     responses(
-        (status = 201, description = "User registered successfully", body = AuthTokens),
+        (status = 201, description = "User registered successfully", body = AuthTokensResponse),
         (status = 400, description = "Validation error"),
         (status = 409, description = "Email already exists")
     )
@@ -44,7 +44,7 @@ pub async fn register(
     tag = "auth",
     request_body = LoginRequest,
     responses(
-        (status = 200, description = "Login successful", body = AuthTokens),
+        (status = 200, description = "Login successful", body = AuthTokensResponse),
         (status = 401, description = "Invalid credentials")
     )
 )]
@@ -69,7 +69,7 @@ pub async fn login(
     tag = "auth",
     request_body = RefreshRequest,
     responses(
-        (status = 200, description = "Token refreshed", body = AuthTokens),
+        (status = 200, description = "Token refreshed", body = AuthTokensResponse),
         (status = 401, description = "Invalid or expired refresh token")
     )
 )]

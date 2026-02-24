@@ -1,6 +1,5 @@
 pub mod constants;
 pub mod extractors;
-pub mod middlewares;
 pub mod models;
 pub mod modules;
 pub mod schemas;

@@ -17,8 +17,8 @@ pub async fn find_by_id(db: &DBSqlite, uid: String) -> anyhow::Result<User> {
 
 // service.rs
 pub async fn register(db: &DBSqlite, email: String) -> anyhow::Result<User> {
-    if find_by_email(db, email.clone()).await?.is_some() {
-        anyhow::bail!("EMAIL_ALREADY_EXISTS");
+    if find_by_email(db, &email).await?.is_some() {
+        bail!("EMAIL_ALREADY_EXISTS");
     }
     // ...
 }
@@ -50,8 +50,9 @@ Use short, uppercase strings as error codes:
 | `REFRESH_TOKEN_EXPIRED` | 401         | Token past expiry               |
 | `TOKEN_CREATE_FAILED`   | 500         | JWT signing failure             |
 | `PASSWORD_HASH_FAILED`  | 500         | Argon2 hashing failure          |
+| `ATTACHMENT_NOT_FOUND`  | 404         | Attachment not found            |
 
-Add new codes to `HttpError::from_service_error()` in `src/utils/http_error.rs`.
+Add new codes to `HttpError::from_service_error()` in `src/services/http_error.rs`.
 
 ## Module Structure
 
@@ -71,8 +72,6 @@ module_name/
 Exports routes and wires the module:
 
 ```rust
-pub use self::{controller::*, model::*, service::*};
-
 use axum::Router;
 use std::sync::Arc;
 use crate::models::AppState;
@@ -80,17 +79,22 @@ use crate::models::AppState;
 pub struct ModuleRoutes;
 
 impl ModuleRoutes {
-    pub fn build(state: Arc<AppState>) -> Router {
+    pub fn build() -> Router<Arc<AppState>> {
         Router::new()
             .route("/endpoint", get(controller::handler))
-            .with_state(state)
     }
 }
 ```
 
-### model.rs
+### model.rs — Type Naming Convention
 
-Domain models and DTOs:
+| Category      | Pattern                   | Examples                                                   |
+| ------------- | ------------------------- | ---------------------------------------------------------- |
+| DB entity     | `{Entity}`                | `User`, `Attachment`, `RefreshToken`                       |
+| Insertable    | `New{Entity}`             | `NewUser`, `NewAttachment`                                 |
+| Response DTO  | `{Entity}Response`        | `UserResponse`, `AttachmentResponse`, `AuthTokensResponse` |
+| Request DTO   | `{Action}{Entity}Request` | `RegisterRequest`, `LoginRequest`, `UpdateAttachmentRequest` |
+| Query params  | `{Entity}Query`           | `UserQuery`                                                |
 
 ```rust
 use diesel::prelude::*;
@@ -112,40 +116,30 @@ pub struct CreateRequest {
 }
 ```
 
-### repository.rs
+### controller.rs — Handler Naming Convention
 
-Database operations only. No business logic:
+Handlers use HTTP-action-oriented names:
 
-```rust
-use super::model::User;
-use crate::{schemas::table::users, services::DBSqlite};
-use diesel::prelude::*;
+| Operation           | Convention  | Example                        |
+| ------------------- | ----------- | ------------------------------ |
+| List resources      | `list`      | `list`                         |
+| Get single resource | `get_by_id` | `get_by_id`                    |
+| Get current user    | `get_me`    | `get_me`                       |
+| Create resource     | `create`    | `create`                       |
+| Upload file         | `upload`    | `upload`                       |
+| Update resource     | `update`    | `update`                       |
+| Delete resource     | `delete`    | `delete`                       |
+| Auth actions        | verb        | `register`, `login`, `refresh` |
 
-pub async fn find_by_id(db: &DBSqlite, uid: String) -> anyhow::Result<User> {
-    // Diesel queries only
-}
-```
-
-### service.rs
-
-Business logic. No HTTP dependencies:
-
-```rust
-use super::{model::*, repository};
-use crate::services::DBSqlite;
-
-pub async fn do_something(db: &DBSqlite, param: String) -> anyhow::Result<Output> {
-    // Validation, computation, calling repository
-}
-```
-
-### controller.rs
-
-HTTP handlers. Thin orchestration:
+Import `HttpError` and `HttpResponse` from `crate::services`:
 
 ```rust
 use super::{model::*, service};
-use crate::{extractors::BodyJson, models::AppState, utils::{HttpError, HttpResponse}};
+use crate::{
+    extractors::BodyJson,
+    models::AppState,
+    services::{HttpError, HttpResponse},
+};
 use axum::{extract::State, response::IntoResponse};
 use std::sync::Arc;
 
@@ -160,6 +154,59 @@ pub async fn handler(
 }
 ```
 
+### service.rs — Business Logic Naming Convention
+
+Services use domain-oriented names (no HTTP concepts):
+
+| Operation            | Convention        | Example                         |
+| -------------------- | ----------------- | ------------------------------- |
+| Find by ID           | `find_by_id`      | `find_by_id`                    |
+| Find by field        | `find_by_{field}` | `find_by_email`, `find_by_user` |
+| Find all (paginated) | `find_all`        | `find_all`                      |
+| Create               | `create`          | `create`                        |
+| Update               | `update`          | `update`                        |
+| Delete               | `delete`          | `delete`                        |
+| Auth actions         | descriptive verb  | `register`, `login`, `refresh`  |
+
+### repository.rs — Database Operation Naming Convention
+
+Repositories use database-oriented terms:
+
+| Operation            | Convention        | Example                          |
+| -------------------- | ----------------- | -------------------------------- |
+| Find by ID           | `find_by_id`      | `find_by_id`                     |
+| Find by field        | `find_by_{field}` | `find_by_email`, `find_by_token` |
+| Find all (paginated) | `find_all`        | `find_all`                       |
+| Insert record        | `insert`          | `insert`                         |
+| Rotate token         | `rotate`          | `rotate`                         |
+| Update record        | `update`          | `update`                         |
+| Delete record        | `delete`          | `delete`                         |
+
+```rust
+use super::model::User;
+use crate::{schemas::table::users, services::DBSqlite};
+use diesel::prelude::*;
+
+pub async fn find_by_id(db: &DBSqlite, uid: String) -> anyhow::Result<User> {
+    // Diesel queries only
+}
+```
+
+### mod.rs — Route Struct Naming Convention
+
+```rust
+pub struct {Module}Routes;
+
+impl {Module}Routes {
+    pub fn build() -> Router<Arc<AppState>> {
+        Router::new()
+            // ...
+    }
+}
+```
+
+Current modules: `UserRoutes`, `AuthRoutes`, `AttachmentRoutes`, `HealthRoutes`.
+
 ## API Routing Conventions
 
 ### Route Structure
@@ -173,7 +220,7 @@ impl UserRoutes {
     pub fn build() -> Router<Arc<AppState>> {
         Router::new()
             .route("/users/me", get(controller::get_me))
-            .route("/users/:id", get(controller::get_by_id))
+            .route("/users/{id}", get(controller::get_by_id))
     }
 }
 ```
@@ -182,29 +229,28 @@ Routes are merged into the main router in `src/modules/mod.rs`:
 
 ```rust
 Router::new()
-    .nest("/api", api_routes)
     .merge(UserRoutes::build())
     .merge(AuthRoutes::build())
 ```
 
 ### Route Naming Pattern
 
-| Module Type  | Pattern                        | Example Routes                         |
-| ------------ | ------------------------------ | -------------------------------------- |
-| Resource     | `/{resource}`                  | `/users`, `/posts`, `/attachments`     |
-| Resource ID  | `/{resource}/:id`              | `/users/:id`, `/posts/:id`             |
-| Sub-resource | `/{resource}/:id/{sub}`        | `/users/:id/posts`                     |
-| Actions      | `/{resource}/{action}`         | `/users/me`, `/auth/login`             |
-| Nested       | `/{module}/{resource}/{action}`| `/health/live`, `/health/ready`        |
+| Module Type   | Pattern                         | Example Routes                     |
+| ------------- | ------------------------------- | ---------------------------------- |
+| Resource      | `/{resource}`                   | `/users`, `/attachments`           |
+| Resource ID   | `/{resource}/{id}`              | `/users/{id}`, `/attachments/{id}` |
+| Sub-resource  | `/{resource}/{id}/{sub}`        | `/users/{id}/posts`                |
+| Actions       | `/{resource}/{action}`          | `/users/me`, `/auth/login`         |
+| Nested        | `/{module}/{resource}/{action}` | `/health/live`, `/health/ready`    |
 
 ### Correlation with Modules
 
-| Module       | Route Prefix  | Example Routes                              |
-| ------------ | ------------- | ------------------------------------------- |
-| `auth`       | `/auth`       | `/auth/register`, `/auth/login`, `/auth/refresh` |
-| `user`       | `/users`      | `/users/me`, `/users/:id`                   |
-| `health`     | `/health`     | `/health/live`, `/health/ready`             |
-| `attachment` | `/attachments`| `/attachments`, `/attachments/:id`          |
+| Module       | Route Prefix   | Example Routes                                    |
+| ------------ | -------------- | ------------------------------------------------- |
+| `auth`       | `/auth`        | `/auth/register`, `/auth/login`, `/auth/refresh`  |
+| `user`       | `/users`       | `/users/me`, `/users/{id}`                        |
+| `health`     | `/health`      | `/health/live`, `/health/ready`                   |
+| `attachment` | `/attachments` | `/attachments`, `/attachments/{id}`               |
 
 ### Naming Rules
 
@@ -213,18 +259,18 @@ Router::new()
 3. **Special endpoints** use descriptive names: `/users/me` (current user)
 4. **Health/monitoring** routes are outside `/api`: `/health/live`, `/health/ready`
 5. **CRUD operations** follow REST conventions:
-   - `GET /users` - list all
-   - `GET /users/:id` - get one
-   - `POST /users` - create
-   - `PUT /users/:id` - update
-   - `DELETE /users/:id` - delete
+   - `GET /users` — list all
+   - `GET /users/{id}` — get one
+   - `POST /users` — create
+   - `PATCH /users/{id}` — update
+   - `DELETE /users/{id}` — delete
 
 ## Naming Conventions
 
 | Element     | Convention      | Example                             |
 | ----------- | --------------- | ----------------------------------- |
 | Modules     | snake_case      | `user`, `auth`                      |
-| Structs     | PascalCase      | `UserResponse`, `AuthService`       |
+| Structs     | PascalCase      | `UserResponse`, `AuthTokensResponse` |
 | Functions   | snake_case      | `find_by_id`, `build_tokens`        |
 | Constants   | SCREAMING_SNAKE | `ACCESS_TOKEN_EXPIRES_IN`           |
 | Error codes | SCREAMING_SNAKE | `NOT_FOUND`, `EMAIL_ALREADY_EXISTS` |
@@ -234,11 +280,11 @@ Router::new()
 
 - Use `async fn` for all handlers and service functions
 - Diesel operations wrapped in `db.execute()` and `db.transaction()`
-- No `.unwrap()` in production code—use `?` or `map_err`
+- No `.unwrap()` in production code — use `?` or `map_err`
 
 ## JSON Responses
 
-All responses use `HttpResponse`:
+All responses use `HttpResponse` (from `crate::services`):
 
 ```rust
 // Success
@@ -268,26 +314,19 @@ Response format:
 
 ## Swagger Documentation
 
-### File Organization
+### Structure
 
-Swagger documentation is split into module-specific files:
+Documentation lives **inline with the real handlers** — no separate stub files.
 
-```
-src/docs/
-├── mod.rs           # ApiDoc struct, security config, health endpoints, router
-├── auth.rs          # Auth endpoints (register, login, refresh)
-├── user.rs          # User endpoints (get_me)
-└── attachment.rs    # Attachment endpoints (upload, list, get, update, delete)
-```
+- `src/modules/doc.rs` — `ApiDoc` aggregator, `SecurityAddon`, `swagger_router()`
+- Each `controller.rs` — `#[utoipa::path]` macro directly above its handler
 
-### Documentation Structure
+### Documentation Pattern
 
-Each endpoint is documented with a separate function:
+Place `#[utoipa::path]` immediately before the `pub async fn` it documents:
 
 ```rust
-// src/docs/user.rs
-use crate::modules::user::model::UserResponse;
-
+// src/modules/user/controller.rs
 #[utoipa::path(
     get,
     path = "/users/me",
@@ -298,23 +337,29 @@ use crate::modules::user::model::UserResponse;
         (status = 401, description = "Unauthorized")
     )
 )]
-#[allow(dead_code)]
-pub fn users_me() {}
+pub async fn get_me(
+    State(state): State<Arc<AppState>>,
+    auth: AuthUser,
+) -> Result<impl IntoResponse, HttpError> { /* ... */ }
 ```
 
 ### Integration with ApiDoc
 
-The main `ApiDoc` struct aggregates all modules:
-
 ```rust
-// src/docs/mod.rs
+// src/modules/doc.rs
+use crate::modules::{
+    auth::controller as auth_controller,
+    user::controller as user_controller,
+    // ...
+};
+
 #[derive(OpenApi)]
 #[openapi(
     paths(
-        auth::auth_register,
-        auth::auth_login,
-        user::users_me,
-        attachment::attachments_upload,
+        auth_controller::register,
+        auth_controller::login,
+        user_controller::get_me,
+        user_controller::list,
         // ...
     ),
     components(schemas(
@@ -338,7 +383,7 @@ pub struct ApiDoc;
 
 ### Adding New Endpoint Documentation
 
-1. Add documentation function to appropriate `src/docs/{module}.rs`
-2. Import and add to `ApiDoc` paths
-3. Add any new request/response schemas to components
-4. Add new tag if creating a new module
+1. Add `#[utoipa::path]` directly above the handler in `controller.rs`
+2. Add the function to `ApiDoc` paths in `src/modules/doc.rs`
+3. Add any new request/response schemas to `components(schemas(...))`
+4. Add a new tag entry if creating a new module

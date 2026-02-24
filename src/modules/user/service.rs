@@ -19,7 +19,7 @@ pub async fn find_by_id(
 
 pub async fn find_by_email(
   db: &DBSqlite,
-  user_email: String,
+  user_email: &str,
 ) -> Result<Option<User>> {
   repository::find_by_email(db, user_email).await
 }

@@ -1,4 +1,4 @@
-use crate::{models::AppState, utils::{HttpError, token::decode_token}};
+use crate::{models::AppState, services::HttpError, utils::token::decode_token};
 use axum::{extract::FromRequestParts, http::request::Parts};
 use std::sync::Arc;
 

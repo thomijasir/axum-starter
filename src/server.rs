@@ -2,7 +2,7 @@ use crate::{
   constants::{HEADER_ALLOW, METHOD_ALLOW},
   models::AppState,
   modules::AppRoutes,
-  utils::HttpError,
+  services::HttpError,
 };
 use axum::{
   error_handling::HandleErrorLayer,

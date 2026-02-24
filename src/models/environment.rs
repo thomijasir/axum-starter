@@ -1,4 +1,4 @@
-use crate::{services::DBSqlite, utils};
+use crate::services::DBSqlite;
 
 #[derive(Clone, Debug)]
 pub enum AppEnv {
@@ -47,6 +47,5 @@ pub struct Environment {
 #[derive(Debug, Clone)]
 pub struct AppState {
   pub env: Environment,
-  pub cache: utils::Cache,
-  pub db: DBSqlite, // Change with DBPostgres if you want use postgres
+  pub db: DBSqlite,
 }

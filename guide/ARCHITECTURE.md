@@ -11,31 +11,30 @@ src/
 ├── config.rs            # Environment loading, CORS origins parsing
 ├── server.rs            # AppServer, middleware layers, graceful shutdown
 ├── models/              # Shared domain models
-│   └── environment.rs   # Environment configuration struct
+│   └── environment.rs   # Environment configuration struct, AppState
 ├── modules/             # Feature modules (vertical slices)
+│   ├── doc.rs           # ApiDoc aggregator, SecurityAddon, swagger_router()
 │   ├── health/          # Health check endpoints
 │   ├── user/            # User management
 │   ├── auth/            # Authentication (register, login, refresh)
 │   └── attachment/      # File upload/management
 ├── extractors/          # Custom Axum extractors
 │   ├── auth.rs          # AuthUser (JWT validation)
-│   ├── body.rs          # JSON body extractor
-│   └── formdata.rs      # Multipart form extractor
-├── middlewares/         # Tower middleware (currently unused)
+│   ├── body.rs          # JSON body extractor with validation
+│   └── formdata.rs      # Multipart form extractor with file validation
+├── services/            # Infrastructure services
+│   ├── http_error.rs    # HttpError type, from_service_error mapper
+│   ├── http_response.rs # HttpResponse type
+│   └── sqlite.rs        # DBSqlite connection pool wrapper
 ├── schemas/             # Diesel table definitions
-├── docs/                # OpenAPI/Swagger documentation
-│   ├── mod.rs           # ApiDoc aggregation, swagger router
-│   ├── auth.rs          # Auth endpoint documentation
-│   ├── user.rs          # User endpoint documentation
-│   └── attachment.rs    # Attachment endpoint documentation
+│   └── table.rs         # table! macros
 └── utils/               # Shared utilities
-    ├── http_error.rs    # HTTP error handling
-    ├── http_response.rs # Standardized HTTP responses
+    ├── validation.rs    # Shared format_validation_errors helper
     ├── token.rs         # JWT creation/verification
     ├── encrypt.rs       # Password hashing (argon2)
     ├── files.rs         # File upload/delete utilities
     ├── generator.rs     # Snowflake ID generator
-    └── pagination.rs    # Pagination query params
+    └── integer.rs       # Numeric conversion utilities
 ```
 
 ## Layered Architecture
@@ -68,19 +67,20 @@ The project follows a strict layered architecture with unidirectional dependenci
 - Calls service functions
 - Maps service errors to HTTP errors via `HttpError::from_service_error()`
 - Returns `HttpResponse` or `HttpError`
+- Imports `HttpError` and `HttpResponse` from `crate::services`
 
 ### Service Layer
 
 - Contains business logic
 - No HTTP dependencies (no `axum`, no `StatusCode`)
 - Returns `anyhow::Result<T>`
-- Uses `anyhow::bail!()` with error codes for expected failures
+- Uses `bail!("ERROR_CODE")` / `anyhow!("ERROR_CODE")` for expected failures
 
 ### Repository Layer
 
 - All database operations (Diesel queries)
 - Returns `anyhow::Result<T>`
-- Maps database errors to meaningful error codes
+- Uses `anyhow!("ERROR_CODE")` strings that match entries in `HttpError::from_service_error()`
 
 ## Error Handling Flow
 
@@ -93,11 +93,14 @@ Repository/Service: anyhow::Result<T>
         ▼
 Controller: .map_err(HttpError::from_service_error)?
         │
-        │ Maps error codes to HTTP status codes
+        │ Matches e.to_string() against known error code strings
+        │ Maps to HTTP status codes
         │
         ▼
 HTTP Response: { "success": false, "message": "NOT_FOUND" }
 ```
+
+`HttpError::from_service_error()` lives in `src/services/http_error.rs`. Add new error code strings there when introducing new domain errors.
 
 ## Authentication Flow
 
@@ -113,7 +116,7 @@ HTTP Response: { "success": false, "message": "NOT_FOUND" }
 
 - **ORM**: Diesel 2.3 with SQLite (dev/test) and PostgreSQL (production)
 - **Connection Pool**: r2d2
-- **Migrations**: Located in `migrations/` directory
+- **Migrations**: Single file at `migrations/2024-01-01-000001_initial_schema/`
 - **Schema**: Defined in `src/schemas/table.rs` using `table!` macros
 
 ## Request Lifecycle
@@ -140,27 +143,22 @@ The project uses `utoipa` for automatic OpenAPI documentation generation.
 
 ### Structure
 
-```
-src/docs/
-├── mod.rs           # ApiDoc aggregation, swagger router, health docs
-├── auth.rs          # Auth endpoint documentation
-├── user.rs          # User endpoint documentation
-└── attachment.rs    # Attachment endpoint documentation
-```
+OpenAPI documentation lives **inline with the real handlers** — there are no separate stub files.
+
+- `src/modules/doc.rs` — `ApiDoc` aggregator, `SecurityAddon` modifier, `swagger_router()`
+- Each `controller.rs` — `#[utoipa::path]` macro directly above the handler function
 
 ### How It Works
 
-1. Each module's endpoints are documented in dedicated files under `src/docs/`
-2. The `ApiDoc` struct in `mod.rs` aggregates all paths and schemas
+1. Each handler is annotated with `#[utoipa::path]` directly in its `controller.rs`
+2. `ApiDoc` in `src/modules/doc.rs` aggregates all paths by referencing the actual functions
 3. Swagger UI is mounted at `/spec` (development only)
 4. OpenAPI JSON is available at `/api-docs/openapi.json`
 
 ### Documentation Pattern
 
-Each endpoint is documented with a dummy function containing only the `#[utoipa::path]` attribute:
-
 ```rust
-// src/docs/user.rs
+// src/modules/user/controller.rs
 #[utoipa::path(
     get,
     path = "/users/me",
@@ -171,15 +169,35 @@ Each endpoint is documented with a dummy function containing only the `#[utoipa:
         (status = 401, description = "Unauthorized")
     )
 )]
-#[allow(dead_code)]
-pub fn users_me() {}
+pub async fn get_me(
+    State(state): State<Arc<AppState>>,
+    auth: AuthUser,
+) -> Result<impl IntoResponse, HttpError> {
+    // ...
+}
 ```
 
-The actual handler logic remains in `src/modules/*/controller.rs`.
+### ApiDoc Aggregation
+
+```rust
+// src/modules/doc.rs
+#[derive(OpenApi)]
+#[openapi(
+    paths(
+        health_controller::liveness,
+        auth_controller::register,
+        user_controller::get_me,
+        attachment_controller::upload,
+        // ...
+    ),
+    // ...
+)]
+pub struct ApiDoc;
+```
 
 ### Adding New Endpoints
 
-1. Create documentation function in appropriate `src/docs/{module}.rs`
-2. Add path to `ApiDoc` `paths()` macro
+1. Add `#[utoipa::path]` directly above the handler in `controller.rs`
+2. Add the function path to `ApiDoc` `paths()` in `src/modules/doc.rs`
 3. Add any new schemas to `components(schemas())`
 4. Add tag if introducing a new module

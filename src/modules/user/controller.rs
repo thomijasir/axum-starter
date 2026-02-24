@@ -5,7 +5,7 @@ use super::{
 use crate::{
   extractors::AuthUser,
   models::{AppState, PaginatedResponse},
-  utils::{HttpError, HttpResponse},
+  services::{HttpError, HttpResponse},
 };
 use axum::{
   extract::{Query, State},

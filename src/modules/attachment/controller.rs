@@ -5,14 +5,26 @@ use super::{
 use crate::{
   extractors::{AuthUser, BodyJson, MultipartForm},
   models::{AppState, PaginatedResponse, PaginationQuery},
-  utils::{HttpError, HttpResponse, files},
+  services::{HttpError, HttpResponse},
+  utils::files,
 };
 use axum::{
   extract::{Path, Query, State},
   response::IntoResponse,
 };
 use serde::Deserialize;
-use std::sync::Arc;
+use std::{path::Path as FsPath, sync::Arc};
+
+/// MIME types accepted for file uploads.
+const ALLOWED_MIME_TYPES: &[&str] = &[
+  "image/jpeg",
+  "image/png",
+  "image/gif",
+  "image/webp",
+  "application/pdf",
+  "text/plain",
+  "text/csv",
+];
 
 #[derive(Debug, Deserialize, validator::Validate)]
 pub struct UploadForm {}
@@ -40,25 +52,38 @@ pub async fn upload(
     return Err(HttpError::bad_request("EMPTY_FILE"));
   }
 
-  let filename = file.filename.clone();
+  // Validate MIME type against allowlist
+  if !ALLOWED_MIME_TYPES.contains(&file.content_type.as_str()) {
+    return Err(HttpError::bad_request(format!(
+      "INVALID_FILE_TYPE|allowed={}",
+      ALLOWED_MIME_TYPES.join(", ")
+    )));
+  }
+
+  // Sanitize filename: strip any directory components to prevent path traversal
+  let sanitized_filename = FsPath::new(&file.filename)
+    .file_name()
+    .and_then(|n| n.to_str())
+    .ok_or_else(|| HttpError::bad_request("INVALID_FILENAME"))?
+    .to_string();
+
   let mime_type = file.content_type.clone();
   let contents = file.bytes.clone();
   let size = file.size as i32;
 
-  let user_id = auth.user_id.clone();
-  let file_path = format!("{}/{}", user_id, filename);
+  let file_path = format!("{}/{}", auth.user_id, sanitized_filename);
 
   let path = files::save_file_from_bytes(&file_path, &contents, false)
     .await
     .map_err(|e| {
-      if e.to_string().contains("FILE_EXISTS") {
+      if e.to_string() == "FILE_EXISTS" {
         HttpError::unique_constraint_violation("FILE_ALREADY_EXISTS")
       } else {
         HttpError::server_error("FILE_UPLOAD_FAILED")
       }
     })?;
 
-  let new_attachment = NewAttachment::new(user_id, filename, path, mime_type, size);
+  let new_attachment = NewAttachment::new(auth.user_id, sanitized_filename, path, mime_type, size);
 
   let attachment = service::create(&state.db, new_attachment)
     .await
@@ -110,7 +135,7 @@ pub async fn list(
         (status = 404, description = "Attachment not found")
     )
 )]
-pub async fn get(
+pub async fn get_by_id(
   State(state): State<Arc<AppState>>,
   auth: AuthUser,
   Path(id): Path<i32>,
@@ -176,7 +201,7 @@ pub async fn delete(
   auth: AuthUser,
   Path(id): Path<i32>,
 ) -> Result<impl IntoResponse, HttpError> {
-  let attachment = service::delete(&state.db, id, auth.user_id.clone())
+  let attachment = service::delete(&state.db, id, auth.user_id)
     .await
     .map_err(HttpError::from_service_error)?;
 

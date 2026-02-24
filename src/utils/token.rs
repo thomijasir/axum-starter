@@ -1,4 +1,4 @@
-use super::HttpError;
+use crate::services::HttpError;
 use chrono::{Duration, Utc};
 use jsonwebtoken::errors::{Error, ErrorKind};
 use jsonwebtoken::{Algorithm, DecodingKey, EncodingKey, Header, Validation, decode, encode};
@@ -45,11 +45,6 @@ pub fn decode_token<T: AsRef<str>>(
     &Validation::new(Algorithm::HS256),
   ) {
     Ok(token_data) => {
-      // Check if token has expired
-      if token_data.claims.exp < token_data.claims.iat {
-        return Err(HttpError::unauthorized("EXPIRED_SIGNATURE"));
-      }
-      // Parse token data
       let (user_id, email) = token_data
         .claims
         .sub

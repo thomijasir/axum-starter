@@ -4,7 +4,7 @@ use anyhow::{Result, anyhow};
 use diesel::prelude::*;
 
 /// Find a refresh token row by its token string. Returns `None` if not found.
-pub async fn find_token(
+pub async fn find_by_token(
   db: &DBSqlite,
   incoming_token: String,
 ) -> Result<Option<RefreshToken>> {
@@ -20,7 +20,7 @@ pub async fn find_token(
 }
 
 /// Insert a new refresh token row and return the created record.
-pub async fn insert_token(
+pub async fn insert(
   db: &DBSqlite,
   new_token: NewRefreshToken,
 ) -> Result<RefreshToken> {
@@ -41,7 +41,7 @@ pub async fn insert_token(
 }
 
 /// Delete the old token and insert a new one atomically. Returns the new record.
-pub async fn rotate_token(
+pub async fn rotate(
   db: &DBSqlite,
   old_id: String,
   new_token: NewRefreshToken,

@@ -54,8 +54,9 @@ pub async fn find_by_id(
 /// Find a user by email. Returns `None` if not found.
 pub async fn find_by_email(
   db: &DBSqlite,
-  user_email: String,
+  user_email: &str,
 ) -> Result<Option<User>> {
+  let user_email = user_email.to_string();
   db.execute(move |conn| {
     users::table
       .filter(users::email.eq(&user_email))

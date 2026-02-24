@@ -36,7 +36,7 @@ pub struct RefreshRequest {
 
 #[derive(Debug, Serialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
-pub struct AuthTokens {
+pub struct AuthTokensResponse {
   pub access_token: String,
   pub refresh_token: String,
   /// Seconds until the access token expires (currently 12 hours = 43200)

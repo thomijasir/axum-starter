@@ -1,4 +1,4 @@
-use crate::{models::AppState, utils::{HttpError, HttpResponse}};
+use crate::{models::AppState, services::{HttpError, HttpResponse}};
 use axum::{extract::State, response::IntoResponse};
 use std::sync::Arc;
 

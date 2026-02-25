@@ -1,7 +1,10 @@
 target/
+.claude/
 .git/
 .env*
 !.env.example
 *.md
+*.png
+*.jpg
 .dockerignore
 .gitignore

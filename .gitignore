@@ -1,7 +1,7 @@
 /target
 db.sqlite
 database.db
-
+**/.DS_Store
 # app data
 data/*
 !data/.gitkeep

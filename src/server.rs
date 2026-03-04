@@ -1,5 +1,5 @@
 use crate::{
-  constants::{HEADER_ALLOW, METHOD_ALLOW},
+  constants::{error::*, HEADER_ALLOW, METHOD_ALLOW},
   models::AppState,
   modules::AppRoutes,
   services::HttpError,
@@ -111,9 +111,9 @@ impl AppServer {
     err: Box<dyn std::error::Error + Send + Sync>
   ) -> impl IntoResponse {
     if err.is::<tower::timeout::error::Elapsed>() {
-      HttpError::timeout("REQUEST_TIMED_OUT")
+      HttpError::timeout(ERR042)
     } else {
-      HttpError::server_error("UNEXPECTED_ERROR_OCCURRED")
+      HttpError::server_error(ERR043)
     }
   }
 
@@ -142,6 +142,6 @@ impl AppServer {
   }
 
   async fn handle_404() -> impl IntoResponse {
-    HttpError::not_found("The requested resource was not found")
+    HttpError::not_found(ERR044)
   }
 }

@@ -3,6 +3,7 @@ use super::{
   service,
 };
 use crate::{
+  constants::error::*,
   extractors::{AuthUser, BodyJson, MultipartForm, PathParam},
   models::{AppState, PaginatedResponse, PaginationQuery},
   services::{HttpError, HttpResponse},
@@ -53,16 +54,17 @@ pub async fn upload(
 ) -> Result<impl IntoResponse, HttpError> {
   let file = files
     .get("file")
-    .ok_or_else(|| HttpError::bad_request("NO_FILE_PROVIDED"))?;
+    .ok_or_else(|| HttpError::bad_request(ERR024))?;
 
   if file.is_empty() {
-    return Err(HttpError::bad_request("EMPTY_FILE"));
+    return Err(HttpError::bad_request(ERR025));
   }
 
   // Validate MIME type against allowlist
   if !ALLOWED_MIME_TYPES.contains(&file.content_type.as_str()) {
     return Err(HttpError::bad_request(format!(
-      "INVALID_FILE_TYPE|allowed={}",
+      "{} allowed={}",
+      ERR026,
       ALLOWED_MIME_TYPES.join(", ")
     )));
   }
@@ -71,7 +73,7 @@ pub async fn upload(
   let base_filename = FsPath::new(&file.filename)
     .file_name()
     .and_then(|n| n.to_str())
-    .ok_or_else(|| HttpError::bad_request("INVALID_FILENAME"))?;
+    .ok_or_else(|| HttpError::bad_request(ERR027))?;
   let sanitized_filename = slugify_filename(base_filename);
 
   let mime_type = file.content_type.clone();
@@ -83,10 +85,10 @@ pub async fn upload(
   let path = files::save_file_from_bytes(&file_path, &contents, false)
     .await
     .map_err(|e| {
-      if e.to_string() == "FILE_EXISTS" {
-        HttpError::unique_constraint_violation("FILE_ALREADY_EXISTS")
+      if e.to_string() == ERR028 {
+        HttpError::unique_constraint_violation(ERR029)
       } else {
-        HttpError::server_error("FILE_UPLOAD_FAILED")
+        HttpError::server_error(ERR030)
       }
     })?;
 
@@ -152,7 +154,7 @@ pub async fn get_by_id(
     .map_err(HttpError::from_service_error)?;
 
   if attachment.user_id != auth.user_id {
-    return Err(HttpError::not_found("ATTACHMENT_NOT_FOUND"));
+    return Err(HttpError::not_found(ERR023));
   }
 
   Ok(HttpResponse::ok(AttachmentResponse::from(attachment), "OK"))

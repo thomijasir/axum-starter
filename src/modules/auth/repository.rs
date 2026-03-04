@@ -1,5 +1,6 @@
 use super::model::{NewRefreshToken, RefreshToken};
 use crate::{schemas::table::refresh_tokens, services::DBSqlite};
+use crate::constants::error::*;
 use anyhow::{Result, anyhow};
 use diesel::prelude::*;
 
@@ -14,7 +15,7 @@ pub async fn find_by_token(
       .select(RefreshToken::as_select())
       .first(conn)
       .optional()
-      .map_err(|e| anyhow!("DB error: {}", e))
+      .map_err(|e| anyhow!("{} {}", ERR006, e))
   })
   .await
 }
@@ -29,13 +30,13 @@ pub async fn insert(
     diesel::insert_into(refresh_tokens::table)
       .values(&new_token)
       .execute(conn)
-      .map_err(|e| anyhow!("DB error: {}", e))?;
+      .map_err(|e| anyhow!("{} {}", ERR008, e))?;
 
     refresh_tokens::table
       .filter(refresh_tokens::id.eq(&tid))
       .select(RefreshToken::as_select())
       .first(conn)
-      .map_err(|e| anyhow!("DB error: {}", e))
+      .map_err(|e| anyhow!("{} {}", ERR009, e))
   })
   .await
 }
@@ -50,18 +51,18 @@ pub async fn rotate(
   db.transaction(move |conn| {
     diesel::delete(refresh_tokens::table.filter(refresh_tokens::id.eq(&old_id)))
       .execute(conn)
-      .map_err(|e| anyhow!("DB error (delete): {}", e))?;
+      .map_err(|e| anyhow!("{} {}", ERR007, e))?;
 
     diesel::insert_into(refresh_tokens::table)
       .values(&new_token)
       .execute(conn)
-      .map_err(|e| anyhow!("DB error (insert): {}", e))?;
+      .map_err(|e| anyhow!("{} {}", ERR008, e))?;
 
     refresh_tokens::table
       .filter(refresh_tokens::id.eq(&new_tid))
       .select(RefreshToken::as_select())
       .first(conn)
-      .map_err(|e| anyhow!("DB error (fetch): {}", e))
+      .map_err(|e| anyhow!("{} {}", ERR009, e))
   })
   .await
 }

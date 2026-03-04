@@ -10,6 +10,7 @@ use crate::{
   services::DBSqlite,
   utils::{encrypt, generate_id, generator::uuid, token::create_token},
 };
+use crate::constants::error::*;
 use anyhow::{Result, anyhow, bail};
 use chrono::{Duration, Utc};
 
@@ -42,10 +43,10 @@ pub async fn register(
     .await?
     .is_some()
   {
-    bail!("EMAIL_ALREADY_EXISTS");
+    bail!(ERR010);
   }
 
-  let hashed = encrypt::hash(&password).map_err(|_| anyhow!("PASSWORD_HASH_FAILED"))?;
+  let hashed = encrypt::hash(&password).map_err(|_| anyhow!(ERR011))?;
 
   let now = Utc::now();
   let new_user = NewUser {
@@ -71,13 +72,13 @@ pub async fn login(
 ) -> Result<(User, RefreshToken)> {
   let user = user_service::find_by_email(db, &user_email)
     .await?
-    .ok_or_else(|| anyhow!("INVALID_CREDENTIALS"))?;
+    .ok_or_else(|| anyhow!(ERR013))?;
 
   let valid =
-    encrypt::verify(&password, &user.password).map_err(|_| anyhow!("PASSWORD_VERIFY_FAILED"))?;
+    encrypt::verify(&password, &user.password).map_err(|_| anyhow!(ERR012))?;
 
   if !valid {
-    bail!("INVALID_CREDENTIALS");
+    bail!(ERR013);
   }
 
   let refresh = repository::insert(db, new_refresh_token_record(&user.id)).await?;
@@ -92,13 +93,13 @@ pub async fn refresh(
 ) -> Result<RefreshToken> {
   let existing = repository::find_by_token(db, incoming_token)
     .await?
-    .ok_or_else(|| anyhow!("INVALID_REFRESH_TOKEN"))?;
+    .ok_or_else(|| anyhow!(ERR014))?;
 
   let expires = chrono::DateTime::parse_from_rfc3339(&existing.expires_at)
-    .map_err(|_| anyhow!("INVALID_TOKEN_EXPIRY_FORMAT"))?;
+    .map_err(|_| anyhow!(ERR015))?;
 
   if expires < Utc::now() {
-    bail!("REFRESH_TOKEN_EXPIRED");
+    bail!(ERR016);
   }
 
   repository::rotate(db, existing.id, new_refresh_token_record(&existing.user_id)).await
@@ -111,7 +112,7 @@ pub fn build_tokens(
   secret: &[u8],
 ) -> Result<AuthTokensResponse> {
   let access_token = create_token(format!("{}|{}", user.id, user.email), secret)
-    .map_err(|_| anyhow!("TOKEN_CREATE_FAILED"))?;
+    .map_err(|_| anyhow!(ERR017))?;
 
   Ok(AuthTokensResponse {
     access_token,

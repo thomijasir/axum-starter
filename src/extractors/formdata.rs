@@ -1,4 +1,4 @@
-use crate::{services::HttpError, utils::validation::format_validation_errors};
+use crate::{constants::error::*, services::HttpError, utils::validation::format_validation_errors};
 use axum::{
   body::{Body, Bytes},
   extract::{FromRequest, Multipart, Request},
@@ -77,8 +77,8 @@ impl MultipartFile {
   ) -> Result<(), HttpError> {
     if self.size > config.max_size {
       return Err(HttpError::bad_request(format!(
-        "FILE_TOO_LARGE|max_size={}bytes, actual={}bytes",
-        config.max_size, self.size
+        "{} max={}bytes actual={}bytes",
+        ERR031, config.max_size, self.size
       )));
     }
 
@@ -86,7 +86,8 @@ impl MultipartFile {
       && !allowed.contains(&self.content_type)
     {
       return Err(HttpError::bad_request(format!(
-        "INVALID_FILE_TYPE|allowed={}",
+        "{} allowed={}",
+        ERR026,
         allowed.join(", ")
       )));
     }
@@ -123,7 +124,7 @@ where
 
     let multipart = Multipart::from_request(req, state)
       .await
-      .map_err(|e| HttpError::bad_request(format!("INVALID_MULTIPART_DATA|{}", e)))?;
+      .map_err(|e| HttpError::bad_request(format!("{} {}", ERR035, e)))?;
 
     parse_multipart(multipart, &config).await
   }
@@ -142,7 +143,7 @@ where
   while let Some(field) = multipart
     .next_field()
     .await
-    .map_err(|e| HttpError::bad_request(format!("INVALID_MULTIPART_FIELD|{}", e)))?
+    .map_err(|e| HttpError::bad_request(format!("{} {}", ERR036, e)))?
   {
     let field_name = field.name().unwrap_or("").to_string();
 
@@ -156,7 +157,7 @@ where
       let bytes = field
         .bytes()
         .await
-        .map_err(|e| HttpError::bad_request(format!("FAILED_TO_READ_FILE|{}", e)))?;
+        .map_err(|e| HttpError::bad_request(format!("{} {}", ERR037, e)))?;
 
       let size = bytes.len();
 
@@ -173,15 +174,15 @@ where
 
       if files.len() > config.max_files {
         return Err(HttpError::bad_request(format!(
-          "TOO_MANY_FILES|max={}",
-          config.max_files
+          "{} max={}",
+          ERR039, config.max_files
         )));
       }
     } else {
       let text = field
         .text()
         .await
-        .map_err(|e| HttpError::bad_request(format!("FAILED_TO_READ_FIELD|{}", e)))?;
+        .map_err(|e| HttpError::bad_request(format!("{} {}", ERR038, e)))?;
 
       text_fields.insert(field_name, text);
     }
@@ -189,13 +190,14 @@ where
 
   let fields: T = serde_json::from_value(
     serde_json::to_value(&text_fields)
-      .map_err(|e| HttpError::bad_request(format!("INVALID_FIELD_SERIALIZATION|{}", e)))?,
+      .map_err(|e| HttpError::bad_request(format!("{} {}", ERR040, e)))?,
   )
-  .map_err(|e| HttpError::bad_request(format!("INVALID_FIELD_FORMAT|{}", e)))?;
+  .map_err(|e| HttpError::bad_request(format!("{} {}", ERR041, e)))?;
 
   fields.validate().map_err(|e: ValidationErrors| {
     HttpError::bad_request(format!(
-      "INVALID_VALIDATION|{}",
+      "{} {}",
+      ERR034,
       format_validation_errors(&e)
     ))
   })?;
@@ -236,7 +238,7 @@ where
 
     let multipart = Multipart::from_request(req, state)
       .await
-      .map_err(|e| HttpError::bad_request(format!("INVALID_MULTIPART_DATA|{}", e)))?;
+      .map_err(|e| HttpError::bad_request(format!("{} {}", ERR035, e)))?;
 
     let MultipartForm { fields, files } = parse_multipart(multipart, &config).await?;
 

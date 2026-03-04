@@ -1,3 +1,4 @@
+use crate::constants::error::*;
 use axum::Json;
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
@@ -64,19 +65,17 @@ impl HttpError {
   }
 
   pub fn from_service_error(e: anyhow::Error) -> Self {
-    match e.to_string().as_str() {
-      "NOT_FOUND" => Self::not_found("NOT_FOUND"),
-      "UNIQUE_VIOLATION" => Self::unique_constraint_violation("UNIQUE_VIOLATION"),
-      "EMAIL_ALREADY_EXISTS" => Self::unique_constraint_violation("EMAIL_ALREADY_EXISTS"),
-      "INVALID_CREDENTIALS" => Self::unauthorized("INVALID_CREDENTIALS"),
-      "INVALID_REFRESH_TOKEN" => Self::unauthorized("INVALID_REFRESH_TOKEN"),
-      "REFRESH_TOKEN_EXPIRED" => Self::unauthorized("REFRESH_TOKEN_EXPIRED"),
-      "TOKEN_CREATE_FAILED" => Self::server_error("TOKEN_CREATE_FAILED"),
-      "PASSWORD_HASH_FAILED" => Self::server_error("PASSWORD_HASH_FAILED"),
-      "ATTACHMENT_NOT_FOUND" => Self::not_found("ATTACHMENT_NOT_FOUND"),
+    let msg = e.to_string();
+    let s = msg.as_str();
+    match s {
+      ERR004 => Self::not_found(ERR004),
+      ERR005 | ERR010 => Self::unique_constraint_violation(s),
+      ERR013 | ERR014 | ERR016 => Self::unauthorized(s),
+      ERR017 | ERR011 => Self::server_error(s),
+      ERR023 => Self::not_found(ERR023),
       _ => {
         tracing::error!(error = %e, "unhandled service error");
-        Self::server_error("INTERNAL_SERVER_ERROR")
+        Self::server_error(ERR046)
       }
     }
   }

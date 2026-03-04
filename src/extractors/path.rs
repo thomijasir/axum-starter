@@ -1,4 +1,4 @@
-use crate::services::HttpError;
+use crate::{constants::error::*, services::HttpError};
 use axum::{
   extract::{FromRequestParts, Path, rejection::PathRejection},
   http::request::Parts,
@@ -43,9 +43,9 @@ where
       .map(|Path(value)| PathParam(value))
       .map_err(|rejection| match rejection {
         PathRejection::FailedToDeserializePathParams(e) => {
-          HttpError::bad_request(format!("INVALID_PATH_PARAM|{}", e))
+          HttpError::bad_request(format!("{} {}", ERR032, e))
         }
-        _ => HttpError::bad_request("INVALID_PATH_PARAM"),
+        _ => HttpError::bad_request(ERR032),
       })
   }
 }

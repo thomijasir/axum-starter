@@ -1,9 +1,9 @@
-use crate::services::DBSqlite;
+use crate::{constants::error::*, services::DBSqlite};
 
 #[derive(Clone, Debug)]
 pub enum AppEnv {
   Local,
-  Development,
+  Staging,
   Production,
 }
 
@@ -14,7 +14,7 @@ impl std::fmt::Display for AppEnv {
   ) -> std::fmt::Result {
     match self {
       AppEnv::Local => write!(f, "local"),
-      AppEnv::Development => write!(f, "development"),
+      AppEnv::Staging => write!(f, "staging"),
       AppEnv::Production => write!(f, "production"),
     }
   }
@@ -26,9 +26,9 @@ impl std::str::FromStr for AppEnv {
   fn from_str(s: &str) -> Result<Self, Self::Err> {
     match s.to_lowercase().as_str() {
       "local" => Ok(AppEnv::Local),
-      "development" | "dev" => Ok(AppEnv::Development),
+      "staging" | "stag" => Ok(AppEnv::Staging),
       "production" | "prod" => Ok(AppEnv::Production),
-      _ => Err(format!("Unknown environment: {}", s)),
+      _ => Err(format!("{} {}", ERR045, s)),
     }
   }
 }

@@ -11,9 +11,3 @@ pub const IMAGE_TYPES_SUPPORT: [&str; 3] = ["jpg", "jpeg", "png"];
 pub const VIDEO_TYPES_SUPPORT: [&str; 1] = ["mp4"];
 pub const DOCUMENT_TYPES_SUPPORT: [&str; 8] =
   ["pdf", "docx", "json", "txt", "doc", "html", "htm", "md"];
-
-// Outbox Event Constants
-pub const OUTBOX_EVENT_PROPERTY_LIKE: &str = "property.like";
-pub const OUTBOX_EVENT_PROPERTY_SUPERLIKE: &str = "property.superlike";
-pub const OUTBOX_EVENT_PROPERTY_DISLIKE: &str = "property.dislike";
-pub const OUTBOX_EVENT_AGGREGATE_PROPERTY: &str = "property";

@@ -1,4 +1,4 @@
-use crate::services::HttpError;
+use crate::{constants::error::*, services::HttpError};
 use chrono::{Duration, Utc};
 use jsonwebtoken::errors::{Error, ErrorKind};
 use jsonwebtoken::{Algorithm, DecodingKey, EncodingKey, Header, Validation, decode, encode};
@@ -49,15 +49,15 @@ pub fn decode_token<T: AsRef<str>>(
         .claims
         .sub
         .split_once("|")
-        .ok_or_else(|| HttpError::unauthorized("INVALID_TOKEN"))?;
+        .ok_or_else(|| HttpError::unauthorized(ERR018))?;
 
       Ok((user_id.to_string(), email.to_string()))
     }
     Err(err) => match err.kind() {
-      ErrorKind::ExpiredSignature => Err(HttpError::unauthorized("EXPIRED_SIGNATURE")),
-      ErrorKind::InvalidToken => Err(HttpError::unauthorized("INVALID_TOKEN")),
-      ErrorKind::InvalidSignature => Err(HttpError::unauthorized("INVALID_SIGNATURE")),
-      _ => Err(HttpError::unauthorized("UNAUTHORIZED")),
+      ErrorKind::ExpiredSignature => Err(HttpError::unauthorized(ERR019)),
+      ErrorKind::InvalidToken => Err(HttpError::unauthorized(ERR018)),
+      ErrorKind::InvalidSignature => Err(HttpError::unauthorized(ERR020)),
+      _ => Err(HttpError::unauthorized(ERR021)),
     },
   }
 }

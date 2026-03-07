@@ -1,3 +1,5 @@
+#![allow(clippy::collapsible_if)]
+
 pub mod config;
 pub mod constants;
 pub mod extractors;

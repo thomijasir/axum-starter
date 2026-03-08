@@ -23,8 +23,7 @@ use std::sync::Arc;
         (status = 401, description = "Unauthorized")
     )
 )]
-/// GET /users/me — returns the currently authenticated user's profile.
-/// Protected: requires valid Bearer token (applied via auth middleware on the router group).
+/// — returns the currently authenticated user's profile.
 pub async fn get_me(
   State(state): State<Arc<AppState>>,
   auth: AuthUser,
@@ -51,6 +50,7 @@ pub async fn get_me(
         (status = 401, description = "Unauthorized")
     )
 )]
+/// — returns a paginated list of users with optional username filter.
 pub async fn list(
   State(state): State<Arc<AppState>>,
   Query(query): Query<UserQuery>,

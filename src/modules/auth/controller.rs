@@ -6,7 +6,7 @@ use crate::{
   extractors::BodyJson,
   models::AppState,
   modules::auth::model::AuthTokensResponse,
-  services::{HttpError, HttpResponse},
+  services::{HttpError, HttpErrorFormat, HttpResponse, HttpResponseFormat},
 };
 use axum::{extract::State, response::IntoResponse};
 use std::sync::Arc;
@@ -17,12 +17,12 @@ use std::sync::Arc;
     tag = "auth",
     request_body = RegisterRequest,
     responses(
-        (status = 201, description = "User registered successfully", body = AuthTokensResponse),
+        (status = 201, description = "User registered successfully", body = HttpResponseFormat<AuthTokensResponse>),
         (status = 400, description = "Validation error"),
         (status = 409, description = "Email already exists")
     )
 )]
-/// POST /auth/register — create a new account and return JWT tokens.
+/// — create a new account and return JWT tokens.
 pub async fn register(
   State(state): State<Arc<AppState>>,
   BodyJson(body): BodyJson<RegisterRequest>,
@@ -44,11 +44,15 @@ pub async fn register(
     tag = "auth",
     request_body = LoginRequest,
     responses(
-        (status = 200, description = "Login successful", body = AuthTokensResponse),
-        (status = 401, description = "Invalid credentials")
+        (status = 200, description = "Login successful", body = HttpResponseFormat<AuthTokensResponse>),
+        (status = 401, description = "Invalid credentials", body = HttpErrorFormat,
+            examples(
+                ("AUTH_PASSWORD_FAILED" = (value = json!({"success": false, "message": "AUTH_PASSWORD_FAILED: Authentication failed: 400 Bad Request"})))
+            )
+        )
     )
 )]
-/// POST /auth/login — validate credentials and return JWT tokens.
+/// — validate credentials and return JWT tokens.
 pub async fn login(
   State(state): State<Arc<AppState>>,
   BodyJson(body): BodyJson<LoginRequest>,
@@ -69,11 +73,15 @@ pub async fn login(
     tag = "auth",
     request_body = RefreshRequest,
     responses(
-        (status = 200, description = "Token refreshed", body = AuthTokensResponse),
-        (status = 401, description = "Invalid or expired refresh token")
+        (status = 200, description = "Token refreshed", body = HttpResponseFormat<AuthTokensResponse>),
+        (status = 401, description = "Invalid token", body = HttpErrorFormat,
+            examples(
+                ("AUTH_PASSWORD_FAILED" = (value = json!({"success": false, "message": "AUTH_PASSWORD_FAILED: Authentication failed: 400 Bad Request"})))
+            )
+        )
     )
 )]
-/// POST /auth/refresh — rotate a refresh token and return new JWT tokens.
+/// — rotate a refresh token and return new JWT access + refresh tokens.
 pub async fn refresh(
   State(state): State<Arc<AppState>>,
   BodyJson(body): BodyJson<RefreshRequest>,

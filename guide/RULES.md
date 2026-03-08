@@ -80,6 +80,59 @@ This document defines the do's and don'ts for working with this codebase.
 - DO test both success and error paths
 - DO use descriptive test names: `test_register_with_existing_email_returns_conflict`
 
+### Code Quality
+
+- DO limit function arguments to a maximum of 4. If a function requires more than 4 parameters, group them into a dedicated struct:
+  ```rust
+  // Instead of:
+  fn create_user(name: String, email: String, age: u32, role: String, active: bool) { ... }
+
+  // Do this:
+  struct CreateUserParams {
+      name: String,
+      email: String,
+      age: u32,
+      role: String,
+      active: bool,
+  }
+  fn create_user(params: CreateUserParams) { ... }
+  ```
+
+### Documentation
+
+- DO write `///` doc comments on every public type, field, variant, and function
+- DO place handler doc comments **after** the `#[utoipa::path]` attribute, starting with `/// —` (em dash) followed by a short action phrase:
+  ```rust
+  #[utoipa::path(post, path = "/auth/login", ...)]
+  /// — validate credentials and return JWT tokens.
+  pub async fn login(...) { ... }
+  ```
+- DO open struct-level comments with what the struct **represents**, not what it wraps. Follow role-based phrasing:
+  - Queryable DB models: `"... record queried from the database."`
+  - Insertable DB models: `"... record for INSERT into the database."`
+  - Request DTOs: `"Request body for \`METHOD /path\`."`
+  - Response DTOs: `"Public X DTO returned in API responses."` or `"Response body returned after ..."`
+- DO document enum variants with a concise label ending in a period:
+  ```rust
+  pub enum AppEnv {
+    /// Local development machine.
+    Local,
+    /// Staging / pre-production environment.
+    Staging,
+    /// Live production environment.
+    Production,
+  }
+  ```
+- DO include purpose, constraints, and security notes in field comments where relevant:
+  ```rust
+  /// Bcrypt-hashed password — must not be exposed in API responses.
+  pub password: String,
+
+  /// Page number to fetch (1-based, default: 1).
+  pub page: u32,
+  ```
+- DO document struct-level behaviour (defaults, caps) on the struct comment when it applies to the whole type
+
 ## Must Not Do
 
 ### Error Handling
@@ -120,11 +173,29 @@ This document defines the do's and don'ts for working with this codebase.
 
 ### Code Quality
 
+- DO NOT write functions with more than 4 parameters — use a struct instead
 - DO NOT leave TODO comments in production code
 - DO NOT add dependencies without updating Cargo.toml properly
 - DO NOT use `unwrap()` outside of tests
 - DO NOT shadow Rust standard library names in handler functions (use `get_by_id` not `get`)
 - DO NOT leave commented-out code blocks in source files
+
+### Documentation
+
+- DO NOT leave any public item (`struct`, `enum`, variant, field, `fn`) undocumented
+- DO NOT use `//` for documentation — use `///` only
+- DO NOT repeat information that `#[utoipa::path]` already captures; handler `/// —` describes the action, not the route:
+  ```rust
+  // Wrong:
+  /// GET /users — returns a list of users.
+  pub async fn list(...) { ... }
+
+  // Correct:
+  /// — return a paginated list of users.
+  pub async fn list(...) { ... }
+  ```
+- DO NOT write vague field docs like `"the value"`, `"the user"`, or `"the field"` — state what the value means, its unit, or its constraint
+- DO NOT omit security-relevant notes on sensitive fields (hashed passwords, tokens, secrets)
 
 ## Conditional Rules
 

@@ -13,8 +13,7 @@ use std::sync::Arc;
         (status = 200, description = "Service is alive")
     )
 )]
-/// GET /health/live — Kubernetes liveness probe
-/// Always returns 200 OK as long as the process is running.
+/// — Kubernetes liveness probe. Always returns 200 OK as long as the process is running.
 pub async fn liveness() -> impl IntoResponse {
   HttpResponse::ok(serde_json::Value::Null, "OK")
 }
@@ -28,8 +27,7 @@ pub async fn liveness() -> impl IntoResponse {
         (status = 503, description = "Service unavailable (DB unreachable)")
     )
 )]
-/// GET /health/ready — Kubernetes readiness probe
-/// Returns 200 if the database is reachable, 503 otherwise.
+/// — Kubernetes readiness probe. Returns 200 if the database is reachable, 503 otherwise.
 pub async fn readiness(State(state): State<Arc<AppState>>) -> Result<impl IntoResponse, HttpError> {
   state.db.health_check().await.map_err(|_| {
     HttpError::new(

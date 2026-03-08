@@ -47,6 +47,7 @@ pub struct UploadForm {
         (status = 401, description = "Unauthorized")
     )
 )]
+/// — upload a file (multipart/form-data), validate MIME type, sanitize filename, and persist metadata.
 pub async fn upload(
   State(state): State<Arc<AppState>>,
   auth: AuthUser,
@@ -118,6 +119,7 @@ pub async fn upload(
         (status = 401, description = "Unauthorized")
     )
 )]
+/// — returns a paginated list of attachments belonging to the authenticated user.
 pub async fn list(
   State(state): State<Arc<AppState>>,
   auth: AuthUser,
@@ -144,6 +146,7 @@ pub async fn list(
         (status = 404, description = "Attachment not found")
     )
 )]
+/// — returns a single attachment by ID, enforcing ownership against the authenticated user.
 pub async fn get_by_id(
   State(state): State<Arc<AppState>>,
   auth: AuthUser,
@@ -175,6 +178,7 @@ pub async fn get_by_id(
         (status = 404, description = "Attachment not found")
     )
 )]
+/// — updates attachment metadata for the given ID, scoped to the authenticated user.
 pub async fn update(
   State(state): State<Arc<AppState>>,
   auth: AuthUser,
@@ -205,6 +209,7 @@ pub async fn update(
         (status = 404, description = "Attachment not found")
     )
 )]
+/// — deletes an attachment record and its file from disk, scoped to the authenticated user.
 pub async fn delete(
   State(state): State<Arc<AppState>>,
   auth: AuthUser,

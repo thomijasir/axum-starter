@@ -2,12 +2,24 @@ use crate::constants::error::*;
 use axum::Json;
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
-use serde_json::json;
 use std::fmt;
 
+use crate::services::HttpResponseFormat;
+
+/// Error response body (no `data` field). Used in OpenAPI error response schemas.
+#[derive(Debug, Clone, serde::Serialize, utoipa::ToSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct HttpErrorFormat {
+  pub success: bool,
+  pub message: String,
+}
+
+/// Application error type that implements `IntoResponse`, serializing itself as a JSON error body.
 #[derive(Debug, Clone)]
 pub struct HttpError {
+  /// Error message forwarded into the response body.
   pub message: String,
+  /// HTTP status code for the error response.
   pub status: StatusCode,
 }
 
@@ -81,10 +93,11 @@ impl HttpError {
   }
 
   pub fn into_http_response(self) -> Response {
-    let body = json!({
-        "success": false,
-        "message": self.message.clone()
-    });
+    let body = HttpResponseFormat {
+      success: false,
+      message: self.message,
+      data: None::<serde_json::Value>,
+    };
     (self.status, Json(body)).into_response()
   }
 }

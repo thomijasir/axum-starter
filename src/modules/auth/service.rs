@@ -7,11 +7,9 @@ use crate::{
     model::{NewUser, User},
     service as user_service,
   },
-  services::DBSqlite,
+  services::{DBSqlite, HttpError},
   utils::{encrypt, generate_id, generator::uuid, token::create_token},
 };
-use crate::constants::error::*;
-use anyhow::{Result, anyhow, bail};
 use chrono::{Duration, Utc};
 
 /// Access token expiry in seconds (12 hours).
@@ -38,15 +36,16 @@ pub async fn register(
   user_email: String,
   username: String,
   password: String,
-) -> Result<(User, RefreshToken)> {
+) -> Result<(User, RefreshToken), HttpError> {
   if user_service::find_by_email(db, &user_email)
-    .await?
+    .await
+    .map_err(HttpError::from)?
     .is_some()
   {
-    bail!(ERR010);
+    return Err(HttpError::ERR010);
   }
 
-  let hashed = encrypt::hash(&password).map_err(|_| anyhow!(ERR011))?;
+  let hashed = encrypt::hash(&password).map_err(|_| HttpError::ERR011)?;
 
   let now = Utc::now();
   let new_user = NewUser {
@@ -58,8 +57,12 @@ pub async fn register(
     updated_at: now.to_rfc3339(),
   };
 
-  let user = user_service::create(db, new_user).await?;
-  let refresh = repository::insert(db, new_refresh_token_record(&user.id)).await?;
+  let user = user_service::create(db, new_user)
+    .await
+    .map_err(HttpError::from)?;
+  let refresh = repository::insert(db, new_refresh_token_record(&user.id))
+    .await
+    .map_err(HttpError::from)?;
 
   Ok((user, refresh))
 }
@@ -69,19 +72,21 @@ pub async fn login(
   db: &DBSqlite,
   user_email: String,
   password: String,
-) -> Result<(User, RefreshToken)> {
+) -> Result<(User, RefreshToken), HttpError> {
   let user = user_service::find_by_email(db, &user_email)
-    .await?
-    .ok_or_else(|| anyhow!(ERR013))?;
+    .await
+    .map_err(HttpError::from)?
+    .ok_or(HttpError::ERR013)?;
 
-  let valid =
-    encrypt::verify(&password, &user.password).map_err(|_| anyhow!(ERR012))?;
+  let valid = encrypt::verify(&password, &user.password).map_err(|_| HttpError::ERR013)?;
 
   if !valid {
-    bail!(ERR013);
+    return Err(HttpError::ERR013);
   }
 
-  let refresh = repository::insert(db, new_refresh_token_record(&user.id)).await?;
+  let refresh = repository::insert(db, new_refresh_token_record(&user.id))
+    .await
+    .map_err(HttpError::from)?;
 
   Ok((user, refresh))
 }
@@ -90,19 +95,22 @@ pub async fn login(
 pub async fn refresh(
   db: &DBSqlite,
   incoming_token: String,
-) -> Result<RefreshToken> {
+) -> Result<RefreshToken, HttpError> {
   let existing = repository::find_by_token(db, incoming_token)
-    .await?
-    .ok_or_else(|| anyhow!(ERR014))?;
+    .await
+    .map_err(HttpError::from)?
+    .ok_or(HttpError::ERR014)?;
 
-  let expires = chrono::DateTime::parse_from_rfc3339(&existing.expires_at)
-    .map_err(|_| anyhow!(ERR015))?;
+  let expires =
+    chrono::DateTime::parse_from_rfc3339(&existing.expires_at).map_err(|_| HttpError::ERR015)?;
 
   if expires < Utc::now() {
-    bail!(ERR016);
+    return Err(HttpError::ERR016);
   }
 
-  repository::rotate(db, existing.id, new_refresh_token_record(&existing.user_id)).await
+  repository::rotate(db, existing.id, new_refresh_token_record(&existing.user_id))
+    .await
+    .map_err(HttpError::from)
 }
 
 /// Build the `AuthTokensResponse` payload from a User + RefreshToken.
@@ -110,9 +118,10 @@ pub fn build_tokens(
   user: &User,
   refresh_token: &RefreshToken,
   secret: &[u8],
-) -> Result<AuthTokensResponse> {
+) -> Result<AuthTokensResponse, HttpError> {
   let access_token = create_token(format!("{}|{}", user.id, user.email), secret)
-    .map_err(|_| anyhow!(ERR017))?;
+    .ok()
+    .ok_or(HttpError::ERR017)?;
 
   Ok(AuthTokensResponse {
     access_token,

@@ -1,6 +1,5 @@
 use super::model::{NewUser, User};
 use crate::{schemas::table::users, services::DBSqlite, utils::to_u32};
-use crate::constants::error::*;
 use anyhow::{Result, anyhow};
 use diesel::prelude::*;
 
@@ -14,7 +13,7 @@ pub async fn find_all(
       users::table
         .count()
         .first::<i64>(conn)
-        .map_err(|e| anyhow!("{} {}", ERR006, e))
+        .map_err(|e| anyhow!("DB_ERROR: {}", e))
     })
     .await?;
 
@@ -26,7 +25,7 @@ pub async fn find_all(
         .limit(limit)
         .select(User::as_select())
         .load(conn)
-        .map_err(|e| anyhow!("{} {}", ERR006, e))
+        .map_err(|e| anyhow!("DB_ERROR: {}", e))
     })
     .await?;
 
@@ -45,11 +44,11 @@ pub async fn find_by_id(
         .select(User::as_select())
         .first(conn)
         .optional()
-        .map_err(|e| anyhow!("{} {}", ERR006, e))
+        .map_err(|e| anyhow!("DB_ERROR: {}", e))
     })
     .await?;
 
-  user.ok_or_else(|| anyhow!(ERR004))
+  user.ok_or_else(|| anyhow!("NOT_FOUND"))
 }
 
 /// Find a user by email. Returns `None` if not found.
@@ -64,7 +63,7 @@ pub async fn find_by_email(
       .select(User::as_select())
       .first(conn)
       .optional()
-      .map_err(|e| anyhow!("{} {}", ERR006, e))
+      .map_err(|e| anyhow!("DB_ERROR: {}", e))
   })
   .await
 }
@@ -84,7 +83,7 @@ pub async fn insert(
         diesel::result::Error::DatabaseError(
           diesel::result::DatabaseErrorKind::UniqueViolation,
           _,
-        ) => anyhow!(ERR005),
+        ) => anyhow!("UNIQUE_VIOLATION"),
         other => anyhow!("DB error: {}", other),
       })?;
 
@@ -92,7 +91,7 @@ pub async fn insert(
       .filter(users::id.eq(&uid))
       .select(User::as_select())
       .first(conn)
-      .map_err(|e| anyhow!("{} {}", ERR006, e))
+      .map_err(|e| anyhow!("DB_ERROR: {}", e))
   })
   .await
 }

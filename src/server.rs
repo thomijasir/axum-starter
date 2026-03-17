@@ -1,5 +1,5 @@
 use crate::{
-  constants::{error::*, HEADER_ALLOW, METHOD_ALLOW},
+  constants::{HEADER_ALLOW, METHOD_ALLOW},
   models::AppState,
   modules::AppRoutes,
   services::HttpError,
@@ -39,12 +39,10 @@ impl AppServer {
           .get("x-request-id")
           .and_then(|v| v.to_str().ok())
           .unwrap_or("unknown");
-
         info_span!(
-          "http_request",
+          "REQUEST",
           method = %req.method(),
           uri = %req.uri(),
-          version = ?req.version(),
           request_id = %request_id,
         )
       })
@@ -52,14 +50,14 @@ impl AppServer {
         tracing::info!(
           content_type = ?req.headers().get("content-type"),
           user_agent = ?req.headers().get("user-agent"),
-          "request started"
+          "ON_REQUEST"
         );
       })
       .on_response(|res: &Response<_>, latency: Duration, _span: &Span| {
         tracing::info!(
           status = %res.status().as_u16(),
           latency_ms = latency.as_millis() as u64,
-          "request completed"
+          "ON_RESPONSE"
         );
       })
       .on_failure(
@@ -67,7 +65,7 @@ impl AppServer {
           tracing::error!(
             error = %error,
             latency_ms = latency.as_millis() as u64,
-            "request failed"
+            "RESPONSE_FAILURE"
           );
         },
       );
@@ -89,7 +87,6 @@ impl AppServer {
       .layer(route_layer);
 
     let listener: tokio::net::TcpListener = tokio::net::TcpListener::bind(addr).await?;
-    tracing::info!("Listening on {}", addr);
     axum::serve(listener, app)
       .with_graceful_shutdown(Self::shutdown_signal())
       .await?;
@@ -111,9 +108,9 @@ impl AppServer {
     err: Box<dyn std::error::Error + Send + Sync>
   ) -> impl IntoResponse {
     if err.is::<tower::timeout::error::Elapsed>() {
-      HttpError::timeout(ERR042)
+      HttpError::ERR408
     } else {
-      HttpError::server_error(ERR043)
+      HttpError::ERR043
     }
   }
 
@@ -142,6 +139,6 @@ impl AppServer {
   }
 
   async fn handle_404() -> impl IntoResponse {
-    HttpError::not_found(ERR044)
+    HttpError::ERR404
   }
 }

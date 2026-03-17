@@ -11,3 +11,13 @@ pub const IMAGE_TYPES_SUPPORT: [&str; 3] = ["jpg", "jpeg", "png"];
 pub const VIDEO_TYPES_SUPPORT: [&str; 1] = ["mp4"];
 pub const DOCUMENT_TYPES_SUPPORT: [&str; 8] =
   ["pdf", "docx", "json", "txt", "doc", "html", "htm", "md"];
+/// MIME types accepted for file uploads.
+pub const ALLOWED_MIME_TYPES: &[&str] = &[
+  "image/jpeg",
+  "image/png",
+  "image/gif",
+  "image/webp",
+  "application/pdf",
+  "text/plain",
+  "text/csv",
+];

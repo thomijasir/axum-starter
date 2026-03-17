@@ -1,5 +1,5 @@
 use super::model::{Attachment, NewAttachment, UpdateAttachmentRequest};
-use crate::{constants::error::*, schemas::table::attachments, services::DBSqlite};
+use crate::{schemas::table::attachments, services::DBSqlite};
 use diesel::prelude::*;
 
 pub async fn find_by_id(
@@ -13,11 +13,11 @@ pub async fn find_by_id(
         .select(Attachment::as_select())
         .first(conn)
         .optional()
-        .map_err(|e| anyhow::anyhow!("{} {}", ERR006, e))
+        .map_err(|e| anyhow::anyhow!("DB_ERROR: {}", e))
     })
     .await?;
 
-  attachment.ok_or_else(|| anyhow::anyhow!(ERR023))
+  attachment.ok_or_else(|| anyhow::anyhow!("ATTACHMENT_NOT_FOUND"))
 }
 
 pub async fn find_by_user(
@@ -33,7 +33,7 @@ pub async fn find_by_user(
         .filter(attachments::user_id.eq(&user_id_clone))
         .count()
         .first::<i64>(conn)
-        .map_err(|e| anyhow::anyhow!("{} {}", ERR006, e))
+        .map_err(|e| anyhow::anyhow!("DB_ERROR: {}", e))
     })
     .await?;
 
@@ -46,7 +46,7 @@ pub async fn find_by_user(
         .limit(limit)
         .select(Attachment::as_select())
         .load(conn)
-        .map_err(|e| anyhow::anyhow!("{} {}", ERR006, e))
+        .map_err(|e| anyhow::anyhow!("DB_ERROR: {}", e))
     })
     .await?;
 
@@ -63,7 +63,7 @@ pub async fn find_all(
       attachments::table
         .count()
         .first::<i64>(conn)
-        .map_err(|e| anyhow::anyhow!("{} {}", ERR006, e))
+        .map_err(|e| anyhow::anyhow!("DB_ERROR: {}", e))
     })
     .await?;
 
@@ -75,7 +75,7 @@ pub async fn find_all(
         .limit(limit)
         .select(Attachment::as_select())
         .load(conn)
-        .map_err(|e| anyhow::anyhow!("{} {}", ERR006, e))
+        .map_err(|e| anyhow::anyhow!("DB_ERROR: {}", e))
     })
     .await?;
 
@@ -90,13 +90,13 @@ pub async fn insert(
     diesel::insert_into(attachments::table)
       .values(&new_attachment)
       .execute(conn)
-      .map_err(|e| anyhow::anyhow!("{} {}", ERR006, e))?;
+      .map_err(|e| anyhow::anyhow!("DB_ERROR: {}", e))?;
 
     attachments::table
       .order(attachments::id.desc())
       .select(Attachment::as_select())
       .first(conn)
-      .map_err(|e| anyhow::anyhow!("{} {}", ERR006, e))
+      .map_err(|e| anyhow::anyhow!("DB_ERROR: {}", e))
   })
   .await
 }
@@ -121,19 +121,19 @@ pub async fn update(
           attachments::updated_at.eq(&now),
         ))
         .execute(conn)
-        .map_err(|e| anyhow::anyhow!("{} {}", ERR006, e))?;
+        .map_err(|e| anyhow::anyhow!("DB_ERROR: {}", e))?;
     } else {
       diesel::update(target)
         .set(attachments::updated_at.eq(&now))
         .execute(conn)
-        .map_err(|e| anyhow::anyhow!("{} {}", ERR006, e))?;
+        .map_err(|e| anyhow::anyhow!("DB_ERROR: {}", e))?;
     }
 
     attachments::table
       .filter(attachments::id.eq(id))
       .select(Attachment::as_select())
       .first(conn)
-      .map_err(|e| anyhow::anyhow!("{} {}", ERR006, e))
+      .map_err(|e| anyhow::anyhow!("DB_ERROR: {}", e))
   })
   .await
 }
@@ -150,12 +150,12 @@ pub async fn delete(
       .select(Attachment::as_select())
       .first(conn)
       .optional()
-      .map_err(|e| anyhow::anyhow!("{} {}", ERR006, e))?
-      .ok_or_else(|| anyhow::anyhow!(ERR023))?;
+      .map_err(|e| anyhow::anyhow!("DB_ERROR: {}", e))?
+      .ok_or_else(|| anyhow::anyhow!("ATTACHMENT_NOT_FOUND"))?;
 
     diesel::delete(attachments::table.filter(attachments::id.eq(id)))
       .execute(conn)
-      .map_err(|e| anyhow::anyhow!("{} {}", ERR006, e))?;
+      .map_err(|e| anyhow::anyhow!("DB_ERROR: {}", e))?;
 
     Ok(attachment)
   })

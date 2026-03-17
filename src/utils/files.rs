@@ -1,4 +1,3 @@
-use crate::constants::error::*;
 use anyhow::{Result, bail};
 use axum::body::Bytes;
 use std::path::{Path, PathBuf};
@@ -27,7 +26,7 @@ pub async fn save_file_from_bytes<P: AsRef<Path>>(
   let path = get_path(file_name.as_ref());
 
   if !overwrite && path.exists() {
-    bail!(ERR028);
+    bail!("FILE_EXISTS");
   }
 
   if let Some(parent) = path.parent()

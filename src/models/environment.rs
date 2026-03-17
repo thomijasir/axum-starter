@@ -1,4 +1,4 @@
-use crate::{constants::error::*, services::DBSqlite};
+use crate::services::DBSqlite;
 
 /// Deployment environment the application is running in.
 #[derive(Clone, Debug)]
@@ -32,7 +32,7 @@ impl std::str::FromStr for AppEnv {
       "local" => Ok(AppEnv::Local),
       "staging" | "stag" => Ok(AppEnv::Staging),
       "production" | "prod" => Ok(AppEnv::Production),
-      _ => Err(format!("{} {}", ERR045, s)),
+      _ => Err(format!("INVALID_ENVIRONMENT {}", s)),
     }
   }
 }

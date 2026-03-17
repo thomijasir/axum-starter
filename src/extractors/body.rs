@@ -1,4 +1,4 @@
-use crate::{constants::error::*, services::HttpError, utils::validation::format_validation_errors};
+use crate::{services::HttpError, utils::validation::format_validation_errors};
 use axum::{
   Json,
   body::Body,
@@ -32,15 +32,11 @@ where
   ) -> Result<Self, Self::Rejection> {
     let Json(value) = Json::<T>::from_request(req, state)
       .await
-      .map_err(|e| HttpError::bad_request(format!("{} {}", ERR033, e)))?;
+      .map_err(|e| HttpError::ERR033(e.to_string()))?;
 
-    value.validate().map_err(|e| {
-      HttpError::bad_request(format!(
-        "{} {}",
-        ERR034,
-        format_validation_errors(&e)
-      ))
-    })?;
+    value
+      .validate()
+      .map_err(|e| HttpError::ERR034(format_validation_errors(&e)))?;
 
     Ok(BodyJson(value))
   }

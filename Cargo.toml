@@ -29,7 +29,9 @@ diesel_migrations = { version = "2.3", features = ["sqlite"] }
 # ORM Database with postgres
 # diesel = { version = "2.3", features = ["r2d2", "postgres"] }
 r2d2 = "0.8"
-anyhow = "1.0"
+# Error handleing
+anyhow = "1"
+thiserror = "2"
 # Fetcher like fetch or axios
 reqwest = { version = "0.13.1", features = ["json"] }
 # API Documentation

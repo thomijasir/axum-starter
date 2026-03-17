@@ -1,4 +1,4 @@
-use crate::{constants::error::*, models::AppState, services::HttpError, utils::token::decode_token};
+use crate::{models::AppState, services::HttpError, utils::token::decode_token};
 use axum::{extract::FromRequestParts, http::request::Parts};
 use std::sync::Arc;
 
@@ -24,7 +24,7 @@ impl FromRequestParts<Arc<AppState>> for AuthUser {
       .get(axum::http::header::AUTHORIZATION)
       .and_then(|v| v.to_str().ok())
       .and_then(|v| v.strip_prefix("Bearer "))
-      .ok_or_else(|| HttpError::unauthorized(ERR022))?;
+      .ok_or(HttpError::ERR022)?;
 
     let (user_id, email) = decode_token(token, state.env.secret.as_bytes())?;
 

@@ -28,6 +28,14 @@ pub struct Attachment {
   pub updated_at: String,
 }
 
+#[derive(Debug, Deserialize, validator::Validate, utoipa::ToSchema)]
+pub struct AttachmentUploadForm {
+  /// The file to upload
+  #[serde(default)]
+  #[schema(format = Binary, required = true)]
+  pub file: String,
+}
+
 /// New attachment record for INSERT into the database.
 #[derive(Debug, Clone, Insertable)]
 #[diesel(table_name = attachments)]

@@ -1,4 +1,3 @@
-use crate::constants::error::*;
 use crate::models::{AppEnv, Environment};
 use std::env::var;
 use tracing_appender::non_blocking::WorkerGuard;
@@ -7,22 +6,22 @@ pub fn load_environment() -> Environment {
   let mode = var("APP_ENV")
     .unwrap_or_else(|_| "local".to_string())
     .parse::<AppEnv>()
-    .unwrap();
+    .expect("APP_ENVIRONMENT_INVALID");
 
-  let secret = var("SECRET").expect(ERR047);
+  let secret = var("SECRET").expect("SECRET_REQUIRED");
 
   let port = var("PORT")
     .unwrap_or_else(|_| "3000".to_string())
     .parse::<u16>()
-    .expect(ERR048);
+    .expect("PORT_NUMBER_INVALID");
 
   // Default 300 seconds (5 minutes) — was incorrectly 3000
   let timeout = var("TIMEOUT")
     .unwrap_or_else(|_| "300".to_string())
     .parse::<u64>()
-    .expect(ERR049);
+    .expect("ENV_TIMEOUT_INVALID");
 
-  let database_url = var("DATABASE_URL").expect(ERR050);
+  let database_url = var("DATABASE_URL").expect("DATABASE_URL_REQUIRED");
 
   let cors_origins = var("CORS_ORIGINS")
     .unwrap_or_else(|_| "http://localhost:5000,http://localhost:8080".to_string())
@@ -51,7 +50,7 @@ pub fn ensure_directories(env: &Environment) {
   for dir in dirs {
     if !std::path::Path::new(dir).exists() {
       std::fs::create_dir_all(dir)
-        .unwrap_or_else(|e| panic!("{} '{dir}': {e}", ERR051));
+        .unwrap_or_else(|e| panic!("{} '{dir}': {e}", "ENV_DIRECTORY_CREATE_FAILED"));
       tracing::info!(dir, "DIRECTORY_CREATED");
     }
   }

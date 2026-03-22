@@ -269,3 +269,5 @@ impl IntoResponse for HttpError {
     (self.status(), Json(body)).into_response()
   }
 }
+
+pub type Result<T> = std::result::Result<T, HttpError>;

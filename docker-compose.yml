@@ -3,6 +3,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    command: ["start"]
     ports:
       - "3099:3099"
     env_file:

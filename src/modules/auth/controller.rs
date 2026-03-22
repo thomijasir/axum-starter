@@ -6,7 +6,7 @@ use crate::{
   extractors::BodyJson,
   models::AppState,
   modules::auth::model::AuthTokensResponse,
-  services::{HttpError, HttpErrorFormat, HttpResponse, HttpResponseFormat},
+  services::{HttpError, HttpErrorFormat, HttpResponse, HttpResponseFormat, http_error},
 };
 use axum::{extract::State, response::IntoResponse};
 use std::sync::Arc;
@@ -31,7 +31,7 @@ use std::sync::Arc;
 pub async fn register(
   State(state): State<Arc<AppState>>,
   BodyJson(body): BodyJson<RegisterRequest>,
-) -> Result<impl IntoResponse, HttpError> {
+) -> http_error::Result<impl IntoResponse> {
   let (user, refresh_token) =
     service::register(&state.db, body.email, body.username, body.password).await?;
 
@@ -58,7 +58,7 @@ pub async fn register(
 pub async fn login(
   State(state): State<Arc<AppState>>,
   BodyJson(body): BodyJson<LoginRequest>,
-) -> Result<impl IntoResponse, HttpError> {
+) -> http_error::Result<impl IntoResponse> {
   let (user, refresh_token) = service::login(&state.db, body.email, body.password).await?;
 
   let tokens = service::build_tokens(&user, &refresh_token, state.env.secret.as_bytes())?;

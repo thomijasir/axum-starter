@@ -4,7 +4,8 @@
 #   ./run.sh dev                      # loads .env and runs cargo run
 #   ./run.sh dev:staging              # loads .env.staging and runs cargo run
 #   ./run.sh dev:production           # loads .env.production and runs cargo run --release
-#   ./run.sh start                    # production start (alias of dev:production)
+#   ./run.sh start                    # production start (loads .env.production, execs release binary)
+#   ./run.sh start:staging            # staging start (loads .env.staging, execs release binary)
 #   ./run.sh build                    # cargo build --release
 #   ./run.sh build:staging            # loads .env.staging then build --release
 #   ./run.sh build:production         # loads .env.production then build --release
@@ -19,18 +20,55 @@ set -Eeuo pipefail
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
 
+BIN_NAME="axum-starter"
+DEFAULT_BIN="$SCRIPT_DIR/target/release/$BIN_NAME"
+
+build_release_binary() {
+  ensure_command cargo
+  echo "Building release binary ($BIN_NAME)..." >&2
+  cargo build --release >&2
+}
+
+ensure_release_binary() {
+  local resolved_bin="${RUN_BINARY_PATH:-$DEFAULT_BIN}"
+  local needs_build=0
+
+  if [[ "${FORCE_BUILD:-0}" = "1" ]]; then
+    needs_build=1
+  elif [[ ! -x "$resolved_bin" ]]; then
+    needs_build=1
+  fi
+
+  if [[ $needs_build -eq 1 ]]; then
+    if [[ "${SKIP_BINARY_BUILD:-0}" = "1" ]]; then
+      echo "Release binary not available at $resolved_bin and SKIP_BINARY_BUILD=1; aborting." >&2
+      exit 1
+    fi
+    build_release_binary
+  fi
+
+  if [[ ! -x "$resolved_bin" ]]; then
+    echo "Release binary missing or not executable: $resolved_bin" >&2
+    exit 1
+  fi
+
+  printf '%s' "$resolved_bin"
+}
+
 usage() {
   cat <<'EOF'
 Usage: ./run.sh <command> [-- <args...>]
 
 App:
-  start                   Load .env.production, run cargo run --release
+  start                   Load .env.production, exec release binary
+  start:staging           Load .env.staging, exec release binary
   dev                     Load .env, run cargo run
   dev:staging             Load .env.staging, run cargo run
   dev:production          Load .env.production, run cargo run --release
   build                   cargo build --release
   build:staging           Load .env.staging, build --release
   build:production        Load .env.production, build --release
+  bin:ensure              Build (or verify) release binary without running it
 
 Database (Diesel):
   db:migration:create NAME   diesel migration create NAME
@@ -93,6 +131,20 @@ case "$cmd" in
   # ------------------ App ------------------
   start)
     load_env ".env.production"
+    bin_path="$(ensure_release_binary)"
+    exec "$bin_path" "$@"
+    ;;
+  start:staging)
+    load_env ".env.staging"
+    bin_path="$(ensure_release_binary)"
+    exec "$bin_path" "$@"
+    ;;
+  release)
+    load_env ".env.production"
+    cargo run --release -- "$@"
+    ;;
+  release:staging)
+    load_env ".env.staging"
     cargo run --release -- "$@"
     ;;
   dev)
@@ -121,6 +173,10 @@ case "$cmd" in
   build:production)
     load_env ".env.production"
     cargo build --release "$@"
+    ;;
+  bin:ensure)
+    bin_path="$(ensure_release_binary)"
+    echo "Release binary ready at: $bin_path"
     ;;
 
   # ------------- Database (Diesel) ---------

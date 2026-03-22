@@ -167,10 +167,17 @@ impl DBSqlite {
   /// or an error if any migration failed.
   pub fn run_migrations(&self) -> Result<()> {
     let mut conn = self.pool.get()?;
-    conn
-      .run_pending_migrations(MIGRATIONS)
-      .map_err(|e| anyhow::anyhow!("Migration failed: {}", e))?;
-    Ok(())
+    match conn.run_pending_migrations(MIGRATIONS) {
+      Ok(applied) => {
+        tracing::info!(
+          migrations_applied = applied.len(),
+          ?applied,
+          "MIGRATION_EXECUTE_SUCCESS"
+        );
+        Ok(())
+      }
+      Err(e) => Err(anyhow::anyhow!("MIGRATION_EXECUTE_FAILURE: {}", e)),
+    }
   }
 
   /// Retrieves a pooled database connection.

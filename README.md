@@ -41,13 +41,19 @@ This project uses `run.sh` as a task runner. Always use it instead of running `c
 | `./run.sh dev`            | Load `.env.local`, run with cargo-watch         |
 | `./run.sh dev:staging`    | Load `.env.staging`, run cargo run              |
 | `./run.sh dev:production` | Load `.env.production`, run cargo run --release |
-| `./run.sh start`          | Production start (alias for dev:production)     |
+| `./run.sh start:staging`  | Load `.env.staging`, exec release binary        |
+| `./run.sh start`          | Load `.env.production`, exec release binary     |
 | `./run.sh build`          | cargo build --release                           |
+| `./run.sh bin:ensure`     | Build/verify the release binary without running |
 | `./run.sh lint`           | cargo clippy -D warnings                        |
 | `./run.sh lint:fix`       | cargo clippy --fix                              |
 | `./run.sh format`         | cargo fmt                                       |
 | `./run.sh docker:up`      | docker compose up -d --build                    |
 | `./run.sh docker:down`    | docker compose down                             |
+
+`start` / `start:staging` run the compiled binary via `run.sh`, so local production/staging smoke tests exercise the same artifact Docker ships. Use `./run.sh bin:ensure` when CI or your workflow needs to pre-build the binary before starting containers.
+
+In containerized environments, always use the `docker:*` commands above (not raw `docker compose`) so the same env-loading workflow applies regardless of how the app runs.
 
 ### Database Commands
 
@@ -168,13 +174,27 @@ CORS_ORIGINS=http://localhost:3000,http://localhost:5173
 
 ## Docker
 
+Container builds follow the same flow as production:
+
+1. `./run.sh bin:ensure` (or `cargo build --release`) compiles `target/release/axum-starter`.
+2. The Docker builder stage copies that binary to `/app/api`.
+3. The runtime stage invokes `./run.sh start` (default) or `./run.sh start:staging`, so the script loads the right `.env` file before exec-ing the shipped binary.
+
 ```bash
-# Start all services
+# Start all services (production config, runs ./run.sh start inside the container)
 ./run.sh docker:up
 
 # Stop all services
 ./run.sh docker:down
 ```
+
+To test staging behaviour inside Docker, override the command when launching:
+
+```bash
+docker compose run --rm app start:staging
+```
+
+Because the image entrypoint is `./run.sh`, passing `start:staging` (or any other script command) is enough.
 
 ## Testing
 
